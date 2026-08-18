@@ -150,7 +150,7 @@ function openCreate() {
 }
 async function openEdit(row) {
   editing.value = true
-  const o = await api.productionPlans().then(list => list.find(x => x.id === row.id))
+  const o = await api.productionPlan(row.id)
   Object.assign(form, { ...o })
   dialogVisible.value = true
 }

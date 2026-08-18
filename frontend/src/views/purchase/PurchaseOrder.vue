@@ -127,7 +127,7 @@ async function load() {
 function openCreate() {
   editing.value = false
   Object.keys(form).forEach(k => delete form[k])
-  Object.assign(form, { supplierId: null, orderDate: new Date().toISOString().slice(0, 10), expectDate: '', remark: '', items: [{ materialId: null, qty: 1, price: 0 }] })
+  Object.assign(form, { supplierId: null, orderDate: new Date().toISOString().slice(0, 10), expectDate: new Date().toISOString().slice(0, 10), remark: '', items: [{ materialId: null, qty: 1, price: 0 }] })
   dialogVisible.value = true
 }
 

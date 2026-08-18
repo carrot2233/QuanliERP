@@ -17,16 +17,16 @@
       <el-form-item><el-button type="primary" @click="load">查询</el-button></el-form-item>
     </el-form>
 
-    <el-table :data="rows" border stripe v-loading="loading">
-      <el-table-column prop="orderNo" label="订单号" width="140" align="center" />
+    <el-table :data="rows" border stripe v-loading="loading" header-cell-class-name="th-cell">
+      <el-table-column prop="orderNo" label="订单号" width="180" align="center" class-name="col-nowrap" />
       <el-table-column prop="customerName" label="客户" min-width="160" align="center" />
-      <el-table-column prop="orderDate" label="下单日期" width="110" align="center">
+      <el-table-column prop="orderDate" label="下单日期" width="130" align="center" class-name="col-nowrap">
         <template #default="{ row }">{{ fmt(row.orderDate) }}</template>
       </el-table-column>
-      <el-table-column prop="deliveryDate" label="约定交期" width="110" align="center">
+      <el-table-column prop="deliveryDate" label="约定交期" width="130" align="center" class-name="col-nowrap">
         <template #default="{ row }">{{ fmt(row.deliveryDate) }}</template>
       </el-table-column>
-      <el-table-column prop="amount" label="金额" width="110" align="center">
+      <el-table-column prop="amount" label="金额" width="120" align="center">
         <template #default="{ row }">{{ Number(row.amount).toFixed(2) }}</template>
       </el-table-column>
       <el-table-column prop="status" label="状态" width="100" align="center">
@@ -151,7 +151,7 @@ async function load() {
 function openCreate() {
   editing.value = false
   Object.keys(form).forEach(k => delete form[k])
-  Object.assign(form, { customerId: null, orderDate: new Date().toISOString().slice(0, 10), deliveryDate: '', remark: '', items: [{ productId: null, qty: 1, price: 0 }] })
+  Object.assign(form, { customerId: null, orderDate: new Date().toISOString().slice(0, 10), deliveryDate: new Date().toISOString().slice(0, 10), remark: '', items: [{ productId: null, qty: 1, price: 0 }] })
   dialogVisible.value = true
 }
 
@@ -214,3 +214,7 @@ onMounted(async () => {
   products.value = await api.products()
 })
 </script>
+
+<style scoped>
+:deep(.col-nowrap .cell) { white-space: nowrap !important; overflow: hidden !important; text-overflow: unset !important; }
+</style>

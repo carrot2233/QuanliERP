@@ -20,7 +20,7 @@
           <el-tag :type="{ 保养: 'success', 维修: 'danger', 点检: 'info' }[row.type]" size="small">{{ row.type }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="content" label="内容" min-width="220" align="center" />
+      <el-table-column prop="content" label="内容" min-width="220" align="center" class="allow-wrap" />
       <el-table-column prop="cost" label="费用" width="90" align="center">
         <template #default="{ row }">{{ Number(row.cost || 0).toFixed(2) }}</template>
       </el-table-column>

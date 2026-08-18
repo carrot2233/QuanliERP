@@ -63,7 +63,7 @@
           <el-menu-item index="/mold/plans">模具制造计划</el-menu-item>
         </el-sub-menu>
         <el-sub-menu index="base">
-          <template #title><el-icon><DataBase /></el-icon><span>基础数据</span></template>
+          <template #title><el-icon><Setting /></el-icon><span>基础数据</span></template>
           <el-menu-item index="/base/customers">客户管理</el-menu-item>
           <el-menu-item index="/base/suppliers">供应商管理</el-menu-item>
           <el-menu-item index="/base/materials">原材料管理</el-menu-item>
@@ -100,6 +100,29 @@
           </el-dropdown>
         </div>
       </el-header>
+      <div class="tabs-bar">
+        <button v-show="canScrollLeft" class="tabs-arrow left" @click="scrollTabs(-200)"><el-icon><ArrowLeft /></el-icon></button>
+        <div ref="tabsWrapRef" class="tabs-wrap" @scroll="updateScrollBtns">
+          <div
+            v-for="tab in tabs.list"
+            :key="tab.path"
+            class="tab-item"
+            :class="{ active: $route.path === tab.path }"
+            @click="router.push(tab.path)"
+            @contextmenu.prevent="openCtx($event, tab)"
+          >
+            <span class="tab-title">{{ tab.title }}</span>
+            <el-icon v-if="tab.path !== '/dashboard'" class="tab-close" @click.stop="closeTab(tab.path)"><Close /></el-icon>
+          </div>
+        </div>
+        <button v-show="canScrollRight" class="tabs-arrow right" @click="scrollTabs(200)"><el-icon><ArrowRight /></el-icon></button>
+      </div>
+      <div v-if="ctxMenu.visible" class="ctx-overlay" @click="ctxMenu.visible = false" @contextmenu.prevent="ctxMenu.visible = false"></div>
+      <div v-if="ctxMenu.visible" class="ctx-menu" :style="{ left: ctxMenu.x + 'px', top: ctxMenu.y + 'px' }">
+        <div class="ctx-item" @click="closeCtxTab(ctxMenu.path)">关闭当前</div>
+        <div class="ctx-item" @click="closeCtxOthers(ctxMenu.path)">关闭其他</div>
+        <div class="ctx-item" @click="closeCtxAll">关闭全部</div>
+      </div>
       <el-main class="main">
         <router-view />
       </el-main>
@@ -108,15 +131,91 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, watch, ref, reactive, nextTick, onMounted, onUpdated } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useTabsStore } from '../stores/tabs'
 
 const auth = useAuthStore()
+const tabs = useTabsStore()
 const router = useRouter()
+const route = useRoute()
+const tabsWrapRef = ref(null)
+const canScrollLeft = ref(false)
+const canScrollRight = ref(false)
+
+function updateScrollBtns() {
+  const el = tabsWrapRef.value
+  if (!el) return
+  canScrollLeft.value = el.scrollLeft > 0
+  canScrollRight.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 1
+}
+
+function scrollTabs(offset) {
+  const el = tabsWrapRef.value
+  if (el) el.scrollBy({ left: offset, behavior: 'smooth' })
+}
+
+function checkScroll() {
+  nextTick(updateScrollBtns)
+}
+
+watch(() => tabs.list.length, checkScroll)
+onMounted(checkScroll)
+onUpdated(checkScroll)
+
+watch(() => route.path, () => {
+  if (route.meta.title) tabs.add({ path: route.path, title: route.meta.title })
+  nextTick(() => {
+    const el = tabsWrapRef.value
+    if (!el) return
+    const active = el.querySelector('.tab-item.active')
+    if (active) {
+      const aL = active.offsetLeft
+      const aR = aL + active.offsetWidth
+      if (aR > el.scrollLeft + el.clientWidth) el.scrollLeft = aR - el.clientWidth + 10
+      else if (aL < el.scrollLeft) el.scrollLeft = aL - 10
+    }
+    updateScrollBtns()
+  })
+}, { immediate: true })
+
 const roleName = computed(() => ({
   admin: '系统管理员', production: '生产', warehouse: '仓库', quality: '质量', sales: '销售'
 }[auth.role] || auth.role))
+
+function closeTab(path) {
+  const next = tabs.remove(path)
+  if (route.path === path) router.push(next)
+}
+
+const ctxMenu = reactive({ visible: false, x: 0, y: 0, path: '' })
+
+function openCtx(e, tab) {
+  ctxMenu.x = e.clientX
+  ctxMenu.y = e.clientY
+  ctxMenu.path = tab.path
+  ctxMenu.visible = true
+}
+
+function closeCtxTab(path) {
+  ctxMenu.visible = false
+  closeTab(path)
+}
+
+function closeCtxOthers(path) {
+  ctxMenu.visible = false
+  tabs.closeOthers(path)
+  if (route.path !== path && !tabs.list.some(t => t.path === route.path)) {
+    router.push(path)
+  }
+}
+
+function closeCtxAll() {
+  ctxMenu.visible = false
+  tabs.closeAll()
+  if (route.path !== '/dashboard') router.push('/dashboard')
+}
 
 function handleCommand(cmd) {
   if (cmd === 'logout') {
@@ -135,5 +234,23 @@ function handleCommand(cmd) {
 .header { background: #fff; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 4px rgba(0,21,41,.08); height: 60px; }
 .user { display: flex; align-items: center; gap: 10px; }
 .user-name { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px; }
-.main { padding: 16px; overflow-y: auto; }
+.tabs-bar { background: #fff; border-bottom: 1px solid #e8e8e8; padding: 0; display: flex; align-items: center; position: relative; }
+.tabs-wrap { display: flex; gap: 4px; overflow-x: auto; padding: 8px 16px; flex: 1; min-width: 0; }
+.tabs-wrap::-webkit-scrollbar { height: 4px; }
+.tabs-wrap::-webkit-scrollbar-thumb { background: #c0c4cc; border-radius: 2px; }
+.tabs-arrow { flex-shrink: 0; width: 24px; height: 30px; border: 1px solid #d9d9d9; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 4px; color: #666; font-size: 12px; z-index: 1; }
+.tabs-arrow:hover { color: #409eff; border-color: #409eff; background: #ecf5ff; }
+.tabs-arrow.left { margin-left: 8px; }
+.tabs-arrow.right { margin-right: 8px; }
+.tab-item { display: flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; white-space: nowrap; border: 1px solid #d9d9d9; background: #fafafa; color: #666; transition: all .2s; }
+.tab-item:hover { color: #409eff; border-color: #b3d8ff; background: #ecf5ff; }
+.tab-item.active { color: #fff; background: #409eff; border-color: #409eff; }
+.tab-close { font-size: 12px; border-radius: 50%; padding: 1px; }
+.tab-close:hover { background: rgba(0,0,0,.15); }
+.tab-item.active .tab-close:hover { background: rgba(255,255,255,.3); }
+.main { padding: 16px 24px; overflow-y: auto; }
+.ctx-overlay { position: fixed; inset: 0; z-index: 1999; }
+.ctx-menu { position: fixed; z-index: 2000; background: #fff; border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,.18); padding: 4px 0; min-width: 130px; }
+.ctx-item { padding: 7px 16px; font-size: 13px; color: #333; cursor: pointer; white-space: nowrap; }
+.ctx-item:hover { background: #ecf5ff; color: #409eff; }
 </style>

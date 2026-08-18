@@ -30,7 +30,7 @@
       <el-table-column prop="defectQty" label="不良" width="80" align="center">
         <template #default="{ row }"><span v-if="row.defectQty" style="color:#f56c6c">{{ row.defectQty }}</span><span v-else>-</span></template>
       </el-table-column>
-      <el-table-column prop="defectReason" label="不良原因" min-width="140" align="center" />
+      <el-table-column prop="defectReason" label="不良原因" min-width="140" align="center" class="allow-wrap" />
       <el-table-column prop="result" label="结果" width="90" align="center">
         <template #default="{ row }">
           <el-tag :type="{ 合格: 'success', 不合格: 'danger', 返工: 'warning' }[row.result]" size="small">{{ row.result }}</el-tag>

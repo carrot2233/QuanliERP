@@ -44,7 +44,7 @@
       </el-table-column>
     </el-table>
 
-    <el-dialog v-model="dialogVisible" :title="editing ? '编辑产量单' : '新增产量单'" width="720px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="editing ? '编辑产量单' : '新增产量单'" width="860px" destroy-on-close>
       <el-form :model="form" label-width="90px">
         <el-row :gutter="10">
           <el-col :span="8">
@@ -76,7 +76,7 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="班次">
-              <el-select v-model="form.shiftId" clearable style="width:100%">
+              <el-select v-model="form.shiftId" clearable style="width:100%" @change="v => { const s = shifts.find(x => x.id === v); form.shiftName = s ? s.name : '' }">
                 <el-option v-for="s in shifts" :key="s.id" :label="s.name" :value="s.id" />
               </el-select>
             </el-form-item>
@@ -146,7 +146,7 @@ async function load() {
 function openCreate() {
   editing.value = false
   Object.keys(form).forEach(k => delete form[k])
-  Object.assign(form, { date: new Date().toISOString().slice(0, 10), planNo: '', processName: '', project: '', processDesc: '', finishedQty: 0, scrapQty: 0, completedQty: 0, workHours: 0, machineNo: '', orderNo: '', operator1: '', operator2: '', operator3: '', operator4: '', shiftId: null, remark: '' })
+  Object.assign(form, { date: new Date().toISOString().slice(0, 10), planNo: '', processName: '', project: '', processDesc: '', finishedQty: 0, scrapQty: 0, completedQty: 0, workHours: 0, machineNo: '', orderNo: '', operator1: '', operator2: '', operator3: '', operator4: '', shiftId: null, shiftName: '', remark: '' })
   dialogVisible.value = true
 }
 function openEdit(row) {

@@ -6,4 +6,6 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body, #app { height: 100%; }
 body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #f0f2f5; }
+
+.allow-wrap .cell { white-space: normal !important; word-break: break-word; }
 </style>

@@ -50,6 +50,7 @@ export default {
 
   // 生产
   productionPlans: params => api.get('/ProductionPlans', { params }),
+  productionPlan: id => api.get(`/ProductionPlans/${id}`),
   createProductionPlan: data => api.post('/ProductionPlans', data),
   updateProductionPlan: (id, data) => api.put(`/ProductionPlans/${id}`, data),
   productionPlanStatus: (id, status) => api.post(`/ProductionPlans/${id}/status`, status, { headers: { 'Content-Type': 'application/json' } }),

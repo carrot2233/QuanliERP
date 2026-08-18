@@ -88,7 +88,9 @@ namespace QuanliERP.Api.Controllers
                     .SumAsync(o => (decimal?)o.CompletedQty) ?? 0;
                 result.Add(new
                 {
-                    p.PlanNo, p.ProjectName, p.PlanQty, Done = done,
+                    p.PlanNo,
+                    ProjectName = string.IsNullOrWhiteSpace(p.ProjectName) ? p.PlanNo : p.ProjectName,
+                    p.PlanQty, Done = done,
                     Progress = p.PlanQty <= 0 ? 0 : Math.Round(done * 100 / p.PlanQty, 1),
                     p.Status
                 });

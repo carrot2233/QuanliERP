@@ -24,8 +24,8 @@
       <el-table-column prop="workshop" label="车间" width="110" align="center" />
       <el-table-column prop="employeeName" label="员工" min-width="100" align="center" />
       <el-table-column prop="shiftName" label="班次" width="110" align="center" />
-      <el-table-column prop="task" label="工作任务" min-width="220" align="center" />
-      <el-table-column prop="remark" label="备注" min-width="120" align="center" />
+      <el-table-column prop="task" label="工作任务" min-width="220" align="center" class="allow-wrap" />
+      <el-table-column prop="remark" label="备注" min-width="120" align="center" class="allow-wrap" />
       <el-table-column label="操作" width="150" align="center" fixed="right">
         <template #default="{ row }">
           <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>

@@ -48,7 +48,7 @@
 
     <el-row :gutter="16" class="charts-row">
       <el-col :span="14">
-        <el-card shadow="never" header="生产进度">
+        <el-card shadow="never" header="生产进度" class="progress-card">
           <EChart :option="progressOption" height="320px" />
         </el-card>
       </el-col>
@@ -128,7 +128,7 @@ const invOption = computed(() => {
 const processOption = computed(() => ({
   tooltip: { trigger: 'item' },
   legend: { bottom: 0 },
-  series: [{ type: 'pie', radius: '60%', data: processDist.value, label: { formatter: '{b}: {c}' } }]
+  series: [{ type: 'pie', radius: '55%', data: processDist.value, label: { formatter: '{b}\n{c}', overflow: 'break', width: 100 } }]
 }))
 
 const qualityOption = computed(() => {
@@ -149,17 +149,21 @@ const qualityOption = computed(() => {
   }
 })
 
-const progressOption = computed(() => ({
-  tooltip: { trigger: 'axis', formatter: p => `${p[0].name}<br/>${p[0].marker}进度: ${p[0].value}%` },
-  grid: { left: 130, right: 40, top: 20, bottom: 30 },
-  xAxis: { type: 'value', max: 100, axisLabel: { formatter: '{value}%' } },
-  yAxis: { type: 'category', data: progress.value.map(p => p.planNo + ' ' + p.projectName) },
-  series: [{
-    type: 'bar', data: progress.value.map(p => p.progress), barWidth: 14,
-    itemStyle: { color: p => p.value >= 100 ? '#67c23a' : p.value >= 50 ? '#409eff' : '#e6a23c' },
-    label: { show: true, position: 'right', formatter: '{c}%' }
-  }]
-}))
+const progressOption = computed(() => {
+  const labels = progress.value.map(p => p.planNo + ' ' + p.projectName)
+  const maxLen = labels.reduce((m, s) => Math.max(m, s.length), 0)
+  return {
+    tooltip: { trigger: 'axis', formatter: p => `${p[0].name}<br/>${p[0].marker}进度: ${p[0].value}%` },
+    grid: { left: maxLen * 14 + 16, right: 40, top: 20, bottom: 30 },
+    xAxis: { type: 'value', max: 100, axisLabel: { formatter: '{value}%' } },
+    yAxis: { type: 'category', data: labels },
+    series: [{
+      type: 'bar', data: progress.value.map(p => p.progress), barWidth: 14,
+      itemStyle: { color: p => p.value >= 100 ? '#67c23a' : p.value >= 50 ? '#409eff' : '#e6a23c' },
+      label: { show: true, position: 'right', formatter: '{c}%' }
+    }]
+  }
+})
 
 function formatTime(t) {
   if (!t) return ''
@@ -190,4 +194,5 @@ onMounted(async () => {
 .stat-value { font-size: 26px; font-weight: bold; color: #1f3b73; }
 .stat-label { font-size: 13px; color: #888; margin-top: 2px; }
 .charts-row { margin-bottom: 16px; }
+.progress-card :deep(.el-card__body) { overflow: visible; }
 </style>

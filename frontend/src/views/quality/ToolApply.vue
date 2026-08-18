@@ -23,7 +23,7 @@
       <el-table-column prop="specification" label="规格" min-width="120" align="center" />
       <el-table-column prop="qty" label="数量" width="80" align="center" />
       <el-table-column prop="dept" label="部门" width="100" align="center" />
-      <el-table-column prop="reason" label="申购原因" min-width="150" align="center" />
+      <el-table-column prop="reason" label="申购原因" min-width="150" align="center" class="allow-wrap" />
       <el-table-column prop="applyDate" label="申购日期" width="110" align="center">
         <template #default="{ row }">{{ fmt(row.applyDate) }}</template>
       </el-table-column>
@@ -95,7 +95,7 @@ async function load() {
 function openCreate() {
   editing.value = false
   Object.keys(form).forEach(k => delete form[k])
-  Object.assign(form, { applyNo: '', name: '', specification: '', qty: 1, reason: '', dept: '', applyDate: new Date().toISOString().slice(0, 10), arrivalDate: '', auditStatus: '待审核', remark: '' })
+  Object.assign(form, { applyNo: '', name: '', specification: '', qty: 1, reason: '', dept: '', applyDate: new Date().toISOString().slice(0, 10), arrivalDate: null, auditStatus: '待审核', remark: '' })
   dialogVisible.value = true
 }
 function openEdit(row) {
@@ -105,8 +105,10 @@ function openEdit(row) {
 }
 async function save() {
   if (!form.name) return ElMessage.warning('请输入名称')
-  if (editing.value) { await api.updateToolApply(form.id, form); ElMessage.success('更新成功') }
-  else { await api.createToolApply(form); ElMessage.success('新增成功') }
+  const data = { ...form }
+  if (data.arrivalDate === '' || data.arrivalDate === undefined) data.arrivalDate = null
+  if (editing.value) { await api.updateToolApply(form.id, data); ElMessage.success('更新成功') }
+  else { await api.createToolApply(data); ElMessage.success('新增成功') }
   dialogVisible.value = false
   load()
 }

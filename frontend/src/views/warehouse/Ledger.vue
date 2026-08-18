@@ -37,7 +37,7 @@
       </el-table-column>
       <el-table-column prop="balanceQty" label="结存" width="90" align="center" />
       <el-table-column prop="operator" label="操作人" width="90" align="center" />
-      <el-table-column prop="remark" label="备注" min-width="130" align="center" />
+      <el-table-column prop="remark" label="备注" min-width="130" align="center" class="allow-wrap" />
     </el-table>
   </el-card>
 </template>

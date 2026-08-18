@@ -144,7 +144,7 @@ async function load() {
 function openCreate() {
   editing.value = false
   Object.keys(form).forEach(k => delete form[k])
-  Object.assign(form, { code: '', name: '', model: '', equipType: '', tonnage: 0, workshop: '', status: '运行', manufacturer: '', purchaseDate: '', maintenanceCycle: '', lastMaintainDate: '', nextMaintainDate: '', remark: '' })
+  Object.assign(form, { code: '', name: '', model: '', equipType: '', tonnage: 0, workshop: '', status: '运行', manufacturer: '', purchaseDate: null, maintenanceCycle: '', lastMaintainDate: null, nextMaintainDate: null, remark: '' })
   dialogVisible.value = true
 }
 function openEdit(row) {
@@ -154,8 +154,10 @@ function openEdit(row) {
 }
 async function save() {
   if (!form.code || !form.name) return ElMessage.warning('请填写编号与名称')
-  if (editing.value) { await api.updateEquipment(form.id, form); ElMessage.success('更新成功') }
-  else { await api.createEquipment(form); ElMessage.success('新增成功') }
+  const data = { ...form }
+  ;['purchaseDate', 'lastMaintainDate', 'nextMaintainDate'].forEach(f => { if (data[f] === '' || data[f] === undefined) data[f] = null })
+  if (editing.value) { await api.updateEquipment(form.id, data); ElMessage.success('更新成功') }
+  else { await api.createEquipment(data); ElMessage.success('新增成功') }
   dialogVisible.value = false
   load()
 }

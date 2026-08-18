@@ -11,8 +11,8 @@
       <el-table-column prop="name" label="班次名称" min-width="120" align="center" />
       <el-table-column prop="startTime" label="开始时间" width="120" align="center" />
       <el-table-column prop="endTime" label="结束时间" width="120" align="center" />
-      <el-table-column prop="remark" label="备注" min-width="200" align="center" />
-      <el-table-column label="操作" width="150" align="center">
+      <el-table-column prop="remark" label="备注" min-width="200" align="center" class="allow-wrap" />
+      <el-table-column label="操作" width="150" align="center" fixed="right">
         <template #default="{ row }">
           <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
           <el-button link type="danger" size="small" @click="remove(row)">删除</el-button>

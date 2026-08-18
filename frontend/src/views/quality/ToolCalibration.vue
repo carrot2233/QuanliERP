@@ -20,8 +20,8 @@
           <el-tag :type="{ 合格: 'success', 不合格: 'danger', 待检定: 'warning' }[row.result]" size="small">{{ row.result }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="anomalyDesc" label="异常描述" min-width="150" align="center" />
-      <el-table-column prop="handleAdvice" label="处理意见" min-width="150" align="center" />
+      <el-table-column prop="anomalyDesc" label="异常描述" min-width="150" align="center" class="allow-wrap" />
+      <el-table-column prop="handleAdvice" label="处理意见" min-width="150" align="center" class="allow-wrap" />
       <el-table-column prop="reviewer" label="复核人" width="80" align="center" />
       <el-table-column prop="reviewDate" label="复核日期" width="110" align="center">
         <template #default="{ row }">{{ fmt(row.reviewDate) }}</template>
@@ -99,7 +99,7 @@ async function load() {
 function openCreate() {
   editing.value = false
   Object.keys(form).forEach(k => delete form[k])
-  Object.assign(form, { calibrationNo: '', toolName: '', measureRange: '', toolNo: '', origin: '', receiveDate: '', dept: '', userName: '', result: '待检定', anomalyDesc: '', handleAdvice: '', reviewAdvice: '', reviewer: '', reviewDate: '', remark: '' })
+  Object.assign(form, { calibrationNo: '', toolName: '', measureRange: '', toolNo: '', origin: '', receiveDate: null, dept: '', userName: '', result: '待检定', anomalyDesc: '', handleAdvice: '', reviewAdvice: '', reviewer: '', reviewDate: null, remark: '' })
   dialogVisible.value = true
 }
 function openEdit(row) {
@@ -108,8 +108,11 @@ function openEdit(row) {
   dialogVisible.value = true
 }
 async function save() {
-  if (editing.value) { await api.updateToolCalibration(form.id, form); ElMessage.success('更新成功') }
-  else { await api.createToolCalibration(form); ElMessage.success('新增成功') }
+  const data = { ...form }
+  if (data.receiveDate === '' || data.receiveDate === undefined) data.receiveDate = null
+  if (data.reviewDate === '' || data.reviewDate === undefined) data.reviewDate = null
+  if (editing.value) { await api.updateToolCalibration(form.id, data); ElMessage.success('更新成功') }
+  else { await api.createToolCalibration(data); ElMessage.success('新增成功') }
   dialogVisible.value = false
   load()
 }

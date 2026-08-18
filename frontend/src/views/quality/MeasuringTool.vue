@@ -161,7 +161,7 @@ async function load() {
 function openCreate() {
   editing.value = false
   Object.keys(form).forEach(k => delete form[k])
-  Object.assign(form, { toolNo: '', name: '', specification: '', qty: 1, status: '在用', origin: '', purchaseDate: '', unitPrice: 0, dept: '', holder: '', receiveDate: '', calibrationCycle: '', calibrationPlanDate: '', calibrationDate: '', stopDate: '', remark: '' })
+  Object.assign(form, { toolNo: '', name: '', specification: '', qty: 1, status: '在用', origin: '', purchaseDate: null, unitPrice: 0, dept: '', holder: '', receiveDate: null, calibrationCycle: '', calibrationPlanDate: null, calibrationDate: null, stopDate: null, remark: '' })
   dialogVisible.value = true
 }
 function openEdit(row) {
@@ -171,8 +171,11 @@ function openEdit(row) {
 }
 async function save() {
   if (!form.toolNo || !form.name) return ElMessage.warning('请填写编号与名称')
-  if (editing.value) { await api.updateMeasuringTool(form.id, form); ElMessage.success('更新成功') }
-  else { await api.createMeasuringTool(form); ElMessage.success('新增成功') }
+  const dateFields = ['purchaseDate', 'receiveDate', 'calibrationPlanDate', 'calibrationDate', 'stopDate']
+  const data = { ...form }
+  dateFields.forEach(f => { if (data[f] === '' || data[f] === undefined) data[f] = null })
+  if (editing.value) { await api.updateMeasuringTool(form.id, data); ElMessage.success('更新成功') }
+  else { await api.createMeasuringTool(data); ElMessage.success('新增成功') }
   dialogVisible.value = false
   load()
 }

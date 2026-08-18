@@ -16,7 +16,7 @@
       <el-table-column prop="manufacturer" label="制造厂家" min-width="130" align="center" />
       <el-table-column prop="holder" label="保管人" width="80" align="center" />
       <el-table-column prop="qty" label="数量" width="70" align="center" />
-      <el-table-column prop="reason" label="报废原因" min-width="170" align="center" />
+      <el-table-column prop="reason" label="报废原因" min-width="170" align="center" class="allow-wrap" />
       <el-table-column prop="scrapDate" label="报废日期" width="110" align="center">
         <template #default="{ row }">{{ fmt(row.scrapDate) }}</template>
       </el-table-column>
@@ -91,7 +91,7 @@ async function load() {
 function openCreate() {
   editing.value = false
   Object.keys(form).forEach(k => delete form[k])
-  Object.assign(form, { scrapNo: '', toolName: '', specification: '', manageNo: '', factoryNo: '', manufacturer: '', holder: '', qty: 1, receiveDate: '', scrapDate: new Date().toISOString().slice(0, 10), reason: '', applicant: '', approver: '', remark: '' })
+  Object.assign(form, { scrapNo: '', toolName: '', specification: '', manageNo: '', factoryNo: '', manufacturer: '', holder: '', qty: 1, receiveDate: null, scrapDate: new Date().toISOString().slice(0, 10), reason: '', applicant: '', approver: '', remark: '' })
   dialogVisible.value = true
 }
 function openEdit(row) {
@@ -100,8 +100,10 @@ function openEdit(row) {
   dialogVisible.value = true
 }
 async function save() {
-  if (editing.value) { await api.updateToolScrap(form.id, form); ElMessage.success('更新成功') }
-  else { await api.createToolScrap(form); ElMessage.success('新增成功') }
+  const data = { ...form }
+  if (data.receiveDate === '' || data.receiveDate === undefined) data.receiveDate = null
+  if (editing.value) { await api.updateToolScrap(form.id, data); ElMessage.success('更新成功') }
+  else { await api.createToolScrap(data); ElMessage.success('新增成功') }
   dialogVisible.value = false
   load()
 }

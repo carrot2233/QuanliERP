@@ -23,7 +23,7 @@
       <el-table-column prop="status" label="状态" width="90" align="center">
         <template #default="{ row }"><el-tag type="success" size="small">{{ row.status }}</el-tag></template>
       </el-table-column>
-      <el-table-column prop="remark" label="备注" min-width="140" align="center" />
+      <el-table-column prop="remark" label="备注" min-width="140" align="center" class="allow-wrap" />
       <el-table-column label="操作" width="130" align="center" fixed="right">
         <template #default="{ row }">
           <el-button link type="primary" size="small" @click="openDetail(row)">查看</el-button>
@@ -118,13 +118,14 @@ async function load() {
 
 function openCreate() {
   Object.keys(form).forEach(k => delete form[k])
-  Object.assign(form, { purchaseOrderId: null, warehouseId: null, receiptDate: new Date().toISOString().slice(0, 10), remark: '', items: [] })
+  Object.assign(form, { purchaseOrderId: null, supplierId: null, warehouseId: null, receiptDate: new Date().toISOString().slice(0, 10), remark: '', items: [] })
   dialogVisible.value = true
 }
 
 function onOrderChange(orderId) {
-  if (!orderId) { form.items = []; return }
+  if (!orderId) { form.supplierId = null; form.items = []; return }
   const o = orders.value.find(x => x.id === orderId)
+  form.supplierId = o.supplierId
   form.items = (o.items || []).map(i => ({
     materialId: i.materialId, materialName: i.materialName, materialSpec: i.materialSpec,
     qty: i.qty - i.receivedQty, price: i.price, remain: i.qty - i.receivedQty
