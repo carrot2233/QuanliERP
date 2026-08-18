@@ -1,9 +1,9 @@
-<template>
+﻿<template>
   <el-card shadow="never">
     <template #header>
       <div style="display:flex;align-items:center;justify-content:space-between">
         <span>计量器具台账</span>
-        <el-button type="primary" size="small" @click="openCreate">新增器具</el-button>
+        <el-button type="primary" @click="openCreate">新增器具</el-button>
       </div>
     </template>
 
@@ -20,10 +20,11 @@
         </el-select>
       </el-form-item>
       <el-form-item><el-button type="primary" @click="load">查询</el-button></el-form-item>
+      <el-form-item><el-button @click="resetQuery">重置</el-button></el-form-item>
     </el-form>
 
-    <el-table :data="rows" border stripe v-loading="loading">
-      <el-table-column prop="toolNo" label="器具编号" width="110" align="center" />
+    <el-table :data="displayRows" border stripe v-loading="loading">
+      <el-table-column prop="toolNo" label="器具编号" width="130" align="center" class-name="col-nowrap" />
       <el-table-column prop="name" label="名称" min-width="140" align="center" />
       <el-table-column prop="specification" label="规格" min-width="110" align="center" />
       <el-table-column prop="qty" label="数量" width="70" align="center" />
@@ -35,10 +36,10 @@
       <el-table-column prop="dept" label="使用部门" width="100" align="center" />
       <el-table-column prop="holder" label="保管人" width="90" align="center" />
       <el-table-column prop="calibrationCycle" label="检定周期" width="90" align="center" />
-      <el-table-column prop="calibrationPlanDate" label="计划检定" width="110" align="center">
+      <el-table-column prop="calibrationPlanDate" label="计划检定" width="130" align="center" class-name="col-nowrap">
         <template #default="{ row }">{{ fmt(row.calibrationPlanDate) }}</template>
       </el-table-column>
-      <el-table-column prop="calibrationDate" label="最近检定" width="110" align="center">
+      <el-table-column prop="calibrationDate" label="最近检定" width="130" align="center" class-name="col-nowrap">
         <template #default="{ row }">{{ fmt(row.calibrationDate) }}</template>
       </el-table-column>
       <el-table-column label="校准提醒" width="90" align="center">
@@ -48,13 +49,23 @@
           <el-tag v-else type="success" size="small">正常</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="140" align="center" fixed="right">
+      <el-table-column label="操作" width="150" align="center" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
-          <el-button link type="danger" size="small" @click="remove(row)">删除</el-button>
+          <div class="op-btns">
+            <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
+            <span class="op-sep">|</span>
+            <el-button link type="danger" @click="remove(row)">删除</el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
+
+    <div class="pagination-wrap">
+      <el-pagination background
+        v-model:current-page="currentPage" v-model:page-size="pageSize"
+        :page-sizes="pageSizes" :total="total" :small="true"
+        layout="total, sizes, prev, pager, next" @size-change="handleSizeChange" @current-change="() => {}" />
+    </div>
 
     <el-dialog v-model="dialogVisible" :title="editing ? '编辑器具' : '新增器具'" width="700px" destroy-on-close>
       <el-form :model="form" label-width="100px">
@@ -144,11 +155,14 @@ import api from '../../api/modules'
 
 const statuses = ['在用', '待检', '封存', '停用', '报废']
 const rows = ref([])
+import { usePagination } from '../../composables/usePagination'
+const { currentPage, pageSize, pageSizes, total, displayRows, resetPage, handleSizeChange } = usePagination(rows)
 const overdueList = ref([])
 const loading = ref(false)
 const dialogVisible = ref(false)
 const editing = ref(false)
 const query = reactive({ keyword: '', status: '' })
+const _initQuery = { ...query }
 const form = reactive({})
 
 async function load() {
@@ -189,5 +203,15 @@ function statusTag(s) { return { 在用: 'success', 待检: 'warning', 封存: '
 function calOverdue(row) { return row.calibrationPlanDate && new Date(row.calibrationPlanDate) < new Date().setHours(0, 0, 0, 0) }
 function calNear(row) { return row.calibrationPlanDate && !calOverdue(row) && new Date(row.calibrationPlanDate) - new Date() < 30 * 86400000 }
 function fmt(v) { return v ? String(v).slice(0, 10) : '-' }
+function resetQuery() { Object.assign(query, { ..._initQuery }); resetPage(); load() }
+
 onMounted(load)
 </script>
+
+<style scoped>
+.pagination-wrap { display: flex; justify-content: flex-end; margin-top: 12px; }
+:deep(.col-nowrap .cell) { white-space: nowrap !important; overflow: hidden !important; text-overflow: unset !important; }
+.op-btns { display: inline-flex; align-items: center; gap: 0; white-space: nowrap; }
+.op-sep { color: #dcdfe6; margin: 0 6px; font-weight: 300; user-select: none; }
+.op-btns :deep(.el-button) { font-size: 14px; margin: 0; }
+</style>

@@ -8,4 +8,6 @@ html, body, #app { height: 100%; }
 body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #f0f2f5; }
 
 .allow-wrap .cell { white-space: normal !important; word-break: break-word; }
+
+.el-table th.el-table__cell { background: #4899e4 !important; color: #fff; }
 </style>

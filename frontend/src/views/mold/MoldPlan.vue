@@ -1,22 +1,23 @@
-<template>
+﻿<template>
   <el-card shadow="never">
     <template #header>
       <div style="display:flex;align-items:center;justify-content:space-between">
         <span>模具制造生产总计划</span>
-        <el-button type="primary" size="small" @click="openCreate">新增制造计划</el-button>
+        <el-button type="primary" @click="openCreate">新增制造计划</el-button>
       </div>
     </template>
 
     <el-form :inline="true" class="search-bar">
       <el-form-item label="关键词"><el-input v-model="query.keyword" clearable style="width:200px" @keyup.enter="load" /></el-form-item>
       <el-form-item><el-button type="primary" @click="load">查询</el-button></el-form-item>
+      <el-form-item><el-button @click="resetQuery">重置</el-button></el-form-item>
     </el-form>
 
-    <el-table :data="rows" border stripe v-loading="loading">
-      <el-table-column prop="planNo" label="计划号" width="150" align="center" />
+    <el-table :data="displayRows" border stripe v-loading="loading">
+      <el-table-column prop="planNo" label="计划号" width="180" align="center" class-name="col-nowrap" />
       <el-table-column prop="projectName" label="项目" min-width="130" align="center" />
       <el-table-column prop="customerName" label="客户" min-width="120" align="center" />
-      <el-table-column prop="moldNo" label="模具编号" width="100" align="center" />
+      <el-table-column prop="moldNo" label="模具编号" width="130" align="center" class-name="col-nowrap" />
       <el-table-column prop="moldName" label="模具名称" min-width="130" align="center" />
       <el-table-column prop="processName" label="工艺" width="90" align="center" />
       <el-table-column prop="tonnage" label="吨位" width="80" align="center">
@@ -33,19 +34,30 @@
           <el-tag :type="statusTag(row.moldStatus)" size="small">{{ row.moldStatus }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="计划/实际到货" width="200" align="center">
+      <el-table-column label="计划/实际到货" width="220" align="center" class-name="col-nowrap">
         <template #default="{ row }">
           {{ fmt(row.planArrival) }} / {{ fmt(row.actualArrival) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="160" align="center" fixed="right">
+      <el-table-column label="操作" width="150" align="center" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" size="small" @click="openDetail(row)">阶段</el-button>
-          <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
-          <el-button link type="danger" size="small" @click="remove(row)">删除</el-button>
+          <div class="op-btns">
+            <el-button link type="primary" @click="openDetail(row)">阶段</el-button>
+            <span class="op-sep">|</span>
+            <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
+            <span class="op-sep">|</span>
+            <el-button link type="danger" @click="remove(row)">删除</el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
+
+    <div class="pagination-wrap">
+      <el-pagination background
+        v-model:current-page="currentPage" v-model:page-size="pageSize"
+        :page-sizes="pageSizes" :total="total" :small="true"
+        layout="total, sizes, prev, pager, next" @size-change="handleSizeChange" @current-change="() => {}" />
+    </div>
 
     <el-dialog v-model="dialogVisible" :title="editing ? '编辑制造计划' : '新增制造计划'" width="760px" destroy-on-close>
       <el-form :model="form" label-width="100px">
@@ -138,6 +150,13 @@
             <template #default="{ $index }"><el-button link type="danger" size="small" @click="form.stages.splice($index, 1)">删除</el-button></template>
           </el-table-column>
         </el-table>
+
+    <div class="pagination-wrap">
+      <el-pagination background
+        v-model:current-page="currentPage" v-model:page-size="pageSize"
+        :page-sizes="pageSizes" :total="total" :small="true"
+        layout="total, sizes, prev, pager, next" @size-change="handleSizeChange" @current-change="() => {}" />
+    </div>
         <el-button size="small" style="margin-top:8px" @click="form.stages.push({ stageName: '', planStart: '', planEnd: '', actualStart: '', actualEnd: '', status: '未开始', remark: '' })">+ 添加阶段</el-button>
       </el-form>
       <template #footer>
@@ -171,6 +190,13 @@
         </el-table-column>
         <el-table-column prop="remark" label="备注" min-width="120" align="center" />
       </el-table>
+
+    <div class="pagination-wrap">
+      <el-pagination background
+        v-model:current-page="currentPage" v-model:page-size="pageSize"
+        :page-sizes="pageSizes" :total="total" :small="true"
+        layout="total, sizes, prev, pager, next" @size-change="handleSizeChange" @current-change="() => {}" />
+    </div>
     </el-dialog>
   </el-card>
 </template>
@@ -185,12 +211,15 @@ const stageStatuses = ['未开始', '进行中', '已完成', '超期']
 const processTypes = ['冲压模', '拉伸模', '注塑模', '压铸模', '成型模']
 const moldStatuses = ['排产中', '制造中', '试模', '已完成', '暂停']
 const rows = ref([])
+import { usePagination } from '../../composables/usePagination'
+const { currentPage, pageSize, pageSizes, total, displayRows, resetPage, handleSizeChange } = usePagination(rows)
 const customers = ref([])
 const loading = ref(false)
 const dialogVisible = ref(false)
 const detailVisible = ref(false)
 const editing = ref(false)
 const query = reactive({ keyword: '' })
+const _initQuery = { ...query }
 const form = reactive({})
 const detail = ref({})
 
@@ -229,8 +258,18 @@ async function remove(row) {
 }
 function statusTag(s) { return { 排产中: 'info', 制造中: 'primary', 试模: 'warning', 已完成: 'success', 暂停: 'warning' }[s] || 'info' }
 function fmt(v) { return v ? String(v).slice(0, 10) : '-' }
+function resetQuery() { Object.assign(query, { ..._initQuery }); resetPage(); load() }
+
 onMounted(async () => {
   load()
   customers.value = await api.customers()
 })
 </script>
+
+<style scoped>
+.pagination-wrap { display: flex; justify-content: flex-end; margin-top: 12px; }
+:deep(.col-nowrap .cell) { white-space: nowrap !important; overflow: hidden !important; text-overflow: unset !important; }
+.op-btns { display: inline-flex; align-items: center; gap: 0; white-space: nowrap; }
+.op-sep { color: #dcdfe6; margin: 0 6px; font-weight: 300; user-select: none; }
+.op-btns :deep(.el-button) { font-size: 14px; margin: 0; }
+</style>

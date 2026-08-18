@@ -1,9 +1,9 @@
-<template>
+﻿<template>
   <el-card shadow="never">
     <template #header>
       <div style="display:flex;align-items:center;justify-content:space-between">
         <span>用户管理</span>
-        <el-button type="primary" size="small" @click="openCreate">新增用户</el-button>
+        <el-button type="primary" @click="openCreate">新增用户</el-button>
       </div>
     </template>
 
@@ -14,9 +14,10 @@
       <el-form-item>
         <el-button type="primary" @click="load">查询</el-button>
       </el-form-item>
+      <el-form-item><el-button @click="resetQuery">重置</el-button></el-form-item>
     </el-form>
 
-    <el-table :data="rows" border stripe v-loading="loading">
+    <el-table :data="displayRows" border stripe v-loading="loading">
       <el-table-column type="index" label="#" width="55" align="center" />
       <el-table-column prop="username" label="用户名" width="130" align="center" />
       <el-table-column prop="displayName" label="姓名" width="130" align="center" />
@@ -32,16 +33,26 @@
           <el-tag :type="row.isActive ? 'success' : 'danger'" size="small">{{ row.isActive ? '启用' : '禁用' }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createdAt" label="创建时间" width="160" align="center">
+      <el-table-column prop="createdAt" label="创建时间" width="160" align="center" class-name="col-nowrap">
         <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
       </el-table-column>
       <el-table-column label="操作" width="150" align="center" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
-          <el-button link type="danger" size="small" @click="remove(row)">删除</el-button>
+          <div class="op-btns">
+            <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
+            <span class="op-sep">|</span>
+            <el-button link type="danger" @click="remove(row)">删除</el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
+
+    <div class="pagination-wrap">
+      <el-pagination background
+        v-model:current-page="currentPage" v-model:page-size="pageSize"
+        :page-sizes="pageSizes" :total="total" :small="true"
+        layout="total, sizes, prev, pager, next" @size-change="handleSizeChange" @current-change="() => {}" />
+    </div>
 
     <el-dialog v-model="dialogVisible" :title="editing ? '编辑用户' : '新增用户'" width="480px">
       <el-form :model="form" label-width="90px">
@@ -86,8 +97,11 @@ const roleName = { admin: '系统管理员', production: '生产', warehouse: '�
 const roleTag = { admin: 'danger', production: 'warning', warehouse: 'primary', quality: 'success', sales: 'info' }
 
 const rows = ref([])
+import { usePagination } from '../../composables/usePagination'
+const { currentPage, pageSize, pageSizes, total, displayRows, resetPage, handleSizeChange } = usePagination(rows)
 const loading = ref(false)
 const query = reactive({ keyword: '' })
+const _initQuery = { ...query }
 const dialogVisible = ref(false)
 const editing = ref(false)
 const form = reactive({})
@@ -132,5 +146,15 @@ async function remove(row) {
 }
 
 function fmt(v) { return v ? String(v).replace('T', ' ').slice(0, 19) : '-' }
+function resetQuery() { Object.assign(query, { ..._initQuery }); resetPage(); load() }
+
 onMounted(load)
 </script>
+
+<style scoped>
+.pagination-wrap { display: flex; justify-content: flex-end; margin-top: 12px; }
+:deep(.col-nowrap .cell) { white-space: nowrap !important; overflow: hidden !important; text-overflow: unset !important; }
+.op-btns { display: inline-flex; align-items: center; gap: 0; white-space: nowrap; }
+.op-sep { color: #dcdfe6; margin: 0 6px; font-weight: 300; user-select: none; }
+.op-btns :deep(.el-button) { font-size: 14px; margin: 0; }
+</style>

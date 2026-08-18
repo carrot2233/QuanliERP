@@ -1,9 +1,9 @@
-<template>
+﻿<template>
   <el-card shadow="never">
     <template #header>
       <div style="display:flex;align-items:center;justify-content:space-between">
         <span>排班计划</span>
-        <el-button type="primary" size="small" @click="openCreate">新增排班</el-button>
+        <el-button type="primary" @click="openCreate">新增排班</el-button>
       </div>
     </template>
 
@@ -15,24 +15,35 @@
         <el-date-picker v-model="query.workDate" type="date" value-format="YYYY-MM-DD" style="width:150px" @change="load" />
       </el-form-item>
       <el-form-item><el-button type="primary" @click="load">查询</el-button></el-form-item>
+      <el-form-item><el-button @click="resetQuery">重置</el-button></el-form-item>
     </el-form>
 
-    <el-table :data="rows" border stripe v-loading="loading">
-      <el-table-column prop="workDate" label="日期" width="110" align="center">
+    <el-table :data="displayRows" border stripe v-loading="loading">
+      <el-table-column prop="workDate" label="日期" width="130" align="center" class-name="col-nowrap">
         <template #default="{ row }">{{ fmt(row.workDate) }}</template>
       </el-table-column>
       <el-table-column prop="workshop" label="车间" width="110" align="center" />
       <el-table-column prop="employeeName" label="员工" min-width="100" align="center" />
       <el-table-column prop="shiftName" label="班次" width="110" align="center" />
-      <el-table-column prop="task" label="工作任务" min-width="220" align="center" class="allow-wrap" />
-      <el-table-column prop="remark" label="备注" min-width="120" align="center" class="allow-wrap" />
+      <el-table-column prop="task" label="工作任务" min-width="220" align="center" class="allow-wrap" show-overflow-tooltip />
+      <el-table-column prop="remark" label="备注" min-width="120" align="center" class="allow-wrap" show-overflow-tooltip />
       <el-table-column label="操作" width="150" align="center" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
-          <el-button link type="danger" size="small" @click="remove(row)">删除</el-button>
+          <div class="op-btns">
+            <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
+            <span class="op-sep">|</span>
+            <el-button link type="danger" @click="remove(row)">删除</el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
+
+    <div class="pagination-wrap">
+      <el-pagination background
+        v-model:current-page="currentPage" v-model:page-size="pageSize"
+        :page-sizes="pageSizes" :total="total" :small="true"
+        layout="total, sizes, prev, pager, next" @size-change="handleSizeChange" @current-change="() => {}" />
+    </div>
 
     <el-dialog v-model="dialogVisible" :title="editing ? '编辑排班' : '新增排班'" width="520px" destroy-on-close>
       <el-form :model="form" label-width="90px">
@@ -67,12 +78,15 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '../../api/modules'
 
 const rows = ref([])
+import { usePagination } from '../../composables/usePagination'
+const { currentPage, pageSize, pageSizes, total, displayRows, resetPage, handleSizeChange } = usePagination(rows)
 const employees = ref([])
 const shifts = ref([])
 const loading = ref(false)
 const dialogVisible = ref(false)
 const editing = ref(false)
 const query = reactive({ workshop: '', workDate: '' })
+const _initQuery = { ...query }
 const form = reactive({})
 
 async function load() {
@@ -111,9 +125,19 @@ async function remove(row) {
   load()
 }
 function fmt(v) { return v ? String(v).slice(0, 10) : '-' }
+function resetQuery() { Object.assign(query, { ..._initQuery }); resetPage(); load() }
+
 onMounted(async () => {
   load()
   employees.value = await api.employees()
   shifts.value = await api.shifts()
 })
 </script>
+
+<style scoped>
+.pagination-wrap { display: flex; justify-content: flex-end; margin-top: 12px; }
+:deep(.col-nowrap .cell) { white-space: nowrap !important; overflow: hidden !important; text-overflow: unset !important; }
+.op-btns { display: inline-flex; align-items: center; gap: 0; white-space: nowrap; }
+.op-sep { color: #dcdfe6; margin: 0 6px; font-weight: 300; user-select: none; }
+.op-btns :deep(.el-button) { font-size: 14px; margin: 0; }
+</style>

@@ -17,10 +17,10 @@
       </el-form-item>
     </el-form>
 
-    <el-table :data="rows" border stripe v-loading="loading" size="default">
+    <el-table :data="displayRows" border stripe v-loading="loading" size="default">
       <el-table-column type="index" label="#" width="55" align="center" />
       <el-table-column v-for="c in columns" :key="c.prop" :prop="c.prop" :label="c.label"
-        :width="c.width" :min-width="c.minWidth" align="center" show-overflow-tooltip>
+        :width="c.width" :min-width="c.minWidth" :class-name="c.className" align="center" show-overflow-tooltip>
         <template v-if="c.type === 'tag'" #default="{ row }">
           <el-tag :type="tagType(row[c.prop])" size="small">{{ row[c.prop] || '-' }}</el-tag>
         </template>
@@ -41,6 +41,13 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <div class="pagination-wrap">
+      <el-pagination background
+        v-model:current-page="currentPage" v-model:page-size="pageSize"
+        :page-sizes="pageSizes" :total="total" :small="true"
+        layout="total, sizes, prev, pager, next" @size-change="handleSizeChange" @current-change="() => {}" />
+    </div>
 
     <el-dialog v-model="dialogVisible" :title="editing ? '编辑' : '新增'" width="640px" destroy-on-close>
       <el-form :model="form" label-width="110px">
@@ -70,6 +77,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '../api/modules'
+import { usePagination } from '../composables/usePagination'
 
 const props = defineProps({
   title: { type: String, required: true },
@@ -86,6 +94,7 @@ const dialogVisible = ref(false)
 const editing = ref(false)
 const query = reactive({})
 const form = reactive({})
+const { currentPage, pageSize, pageSizes, total, displayRows, resetPage, handleSizeChange } = usePagination(rows)
 
 async function load() {
   loading.value = true
@@ -98,6 +107,7 @@ async function load() {
 
 function resetQuery() {
   Object.keys(query).forEach(k => delete query[k])
+  resetPage()
   load()
 }
 
@@ -148,4 +158,6 @@ onMounted(load)
 
 <style scoped>
 .search-bar { margin-bottom: 12px; }
+:deep(.col-nowrap .cell) { white-space: nowrap !important; overflow: hidden !important; text-overflow: unset !important; }
+.pagination-wrap { display: flex; justify-content: flex-end; margin-top: 12px; }
 </style>

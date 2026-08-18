@@ -8,12 +8,12 @@
 import CrudPage from '../../components/CrudPage.vue'
 
 const columns = [
-  { prop: 'code', label: '零件编号', width: 110 },
+  { prop: 'code', label: '零件编号', width: 130, className: 'col-nowrap' },
   { prop: 'name', label: '产品名称' },
   { prop: 'specification', label: '规格尺寸', minWidth: 140 },
   { prop: 'material', label: '材质', width: 110 },
-  { prop: 'custPartNo', label: '客户零件号', width: 110 },
-  { prop: 'moldNo', label: '制号/模具', width: 90 },
+  { prop: 'custPartNo', label: '客户零件号', width: 130, className: 'col-nowrap' },
+  { prop: 'moldNo', label: '制号/模具', width: 130, className: 'col-nowrap' },
   { prop: 'oneOutputs', label: '1出几', width: 70 },
   { prop: 'processRoute', label: '工序路线', minWidth: 160 },
   { prop: 'salePrice', label: '销售价', width: 90, type: 'money' }

@@ -1,9 +1,9 @@
-<template>
+﻿<template>
   <el-card shadow="never">
     <template #header>
       <div style="display:flex;align-items:center;justify-content:space-between">
         <span>设备台账</span>
-        <el-button type="primary" size="small" @click="openCreate">新增设备</el-button>
+        <el-button type="primary" @click="openCreate">新增设备</el-button>
       </div>
     </template>
 
@@ -15,9 +15,10 @@
         </el-select>
       </el-form-item>
       <el-form-item><el-button type="primary" @click="load">查询</el-button></el-form-item>
+      <el-form-item><el-button @click="resetQuery">重置</el-button></el-form-item>
     </el-form>
 
-    <el-table :data="rows" border stripe v-loading="loading">
+    <el-table :data="displayRows" border stripe v-loading="loading">
       <el-table-column prop="code" label="设备编号" width="110" align="center" />
       <el-table-column prop="name" label="设备名称" min-width="130" align="center" />
       <el-table-column prop="model" label="型号" min-width="120" align="center" />
@@ -32,10 +33,10 @@
         </template>
       </el-table-column>
       <el-table-column prop="manufacturer" label="制造商" min-width="120" align="center" />
-      <el-table-column prop="purchaseDate" label="购置日期" width="100" align="center">
+      <el-table-column prop="purchaseDate" label="购置日期" width="130" align="center" class-name="col-nowrap">
         <template #default="{ row }">{{ fmt(row.purchaseDate) }}</template>
       </el-table-column>
-      <el-table-column prop="nextMaintainDate" label="下次保养" width="110" align="center">
+      <el-table-column prop="nextMaintainDate" label="下次保养" width="130" align="center" class-name="col-nowrap">
         <template #default="{ row }">{{ fmt(row.nextMaintainDate) }}</template>
       </el-table-column>
       <el-table-column label="保养提醒" width="90" align="center">
@@ -45,13 +46,23 @@
           <el-tag v-else type="success" size="small">正常</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="140" align="center" fixed="right">
+      <el-table-column label="操作" width="150" align="center" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
-          <el-button link type="danger" size="small" @click="remove(row)">删除</el-button>
+          <div class="op-btns">
+            <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
+            <span class="op-sep">|</span>
+            <el-button link type="danger" @click="remove(row)">删除</el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
+
+    <div class="pagination-wrap">
+      <el-pagination background
+        v-model:current-page="currentPage" v-model:page-size="pageSize"
+        :page-sizes="pageSizes" :total="total" :small="true"
+        layout="total, sizes, prev, pager, next" @size-change="handleSizeChange" @current-change="() => {}" />
+    </div>
 
     <el-dialog v-model="dialogVisible" :title="editing ? '编辑设备' : '新增设备'" width="680px" destroy-on-close>
       <el-form :model="form" label-width="100px">
@@ -131,10 +142,13 @@ import api from '../../api/modules'
 const types = ['冲床', '油压机', '剪板机', '折弯机', '车床', '铣床', '钻床', '线切割', '磨床', '焊机', '行车', '其他']
 const statuses = ['运行', '维修', '停机', '报废']
 const rows = ref([])
+import { usePagination } from '../../composables/usePagination'
+const { currentPage, pageSize, pageSizes, total, displayRows, resetPage, handleSizeChange } = usePagination(rows)
 const loading = ref(false)
 const dialogVisible = ref(false)
 const editing = ref(false)
 const query = reactive({ keyword: '', status: '' })
+const _initQuery = { ...query }
 const form = reactive({})
 
 async function load() {
@@ -170,5 +184,15 @@ async function remove(row) {
 function statusTag(s) { return { 运行: 'success', 维修: 'warning', 停机: 'danger', 报废: 'danger' }[s] || 'info' }
 function nearOverdue(row) { return row.nextMaintainDate && !row.overdue && new Date(row.nextMaintainDate) - new Date() < 30 * 86400000 }
 function fmt(v) { return v ? String(v).slice(0, 10) : '-' }
+function resetQuery() { Object.assign(query, { ..._initQuery }); resetPage(); load() }
+
 onMounted(load)
 </script>
+
+<style scoped>
+.pagination-wrap { display: flex; justify-content: flex-end; margin-top: 12px; }
+:deep(.col-nowrap .cell) { white-space: nowrap !important; overflow: hidden !important; text-overflow: unset !important; }
+.op-btns { display: inline-flex; align-items: center; gap: 0; white-space: nowrap; }
+.op-sep { color: #dcdfe6; margin: 0 6px; font-weight: 300; user-select: none; }
+.op-btns :deep(.el-button) { font-size: 14px; margin: 0; }
+</style>

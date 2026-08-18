@@ -8,7 +8,7 @@
 import CrudPage from '../../components/CrudPage.vue'
 
 const columns = [
-  { prop: 'code', label: '工号', width: 80 },
+  { prop: 'code', label: '工号', width: 130, className: 'col-nowrap' },
   { prop: 'name', label: '姓名', width: 90 },
   { prop: 'gender', label: '性别', width: 60 },
   { prop: 'dept', label: '部门', width: 100 },
@@ -27,7 +27,7 @@ const formFields = [
   { prop: 'position', label: '岗位' },
   { prop: 'phone', label: '电话' },
   { prop: 'status', label: '状态', type: 'select', options: ['在职', '离职', '请假'].map(v => ({ label: v, value: v })) },
-  { prop: 'hireDate', label: '入职日期', type: 'date' },
+  { prop: 'hireDate', label: '入职日期', type: 'date', width: 130, className: 'col-nowrap' },
   { prop: 'remark', label: '备注' }
 ]
 </script>

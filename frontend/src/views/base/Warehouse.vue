@@ -7,7 +7,7 @@
 import CrudPage from '../../components/CrudPage.vue'
 
 const columns = [
-  { prop: 'code', label: '仓库编码', width: 100 },
+  { prop: 'code', label: '仓库编码', width: 130, className: 'col-nowrap' },
   { prop: 'name', label: '仓库名称' },
   { prop: 'location', label: '位置', minWidth: 150 },
   { prop: 'manager', label: '负责人', width: 100 },

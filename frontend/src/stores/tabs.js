@@ -10,7 +10,7 @@ export const useTabsStore = defineStore('tabs', {
     },
     add(tab) {
       if (!this.list.some(t => t.path === tab.path)) {
-        this.list.push(tab)
+        this.list.push({ path: tab.path, title: tab.title, icon: tab.icon || '' })
         this._save()
       }
     },

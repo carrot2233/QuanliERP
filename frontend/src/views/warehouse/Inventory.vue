@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-card shadow="never">
     <template #header>
       <div style="display:flex;align-items:center;justify-content:space-between">
@@ -22,9 +22,10 @@
         </el-select>
       </el-form-item>
       <el-form-item><el-button type="primary" @click="load">查询</el-button></el-form-item>
+      <el-form-item><el-button @click="resetQuery">重置</el-button></el-form-item>
     </el-form>
 
-    <el-table :data="rows" border stripe v-loading="loading">
+    <el-table :data="displayRows" border stripe v-loading="loading">
       <el-table-column prop="warehouseName" label="仓库" width="110" align="center" />
       <el-table-column prop="itemType" label="类型" width="70" align="center">
         <template #default="{ row }"><el-tag :type="row.itemType === '材料' ? 'warning' : 'primary'" size="small">{{ row.itemType }}</el-tag></template>
@@ -45,6 +46,13 @@
         <template #default="{ row }">{{ fmt(row.updatedAt) }}</template>
       </el-table-column>
     </el-table>
+
+    <div class="pagination-wrap">
+      <el-pagination background
+        v-model:current-page="currentPage" v-model:page-size="pageSize"
+        :page-sizes="pageSizes" :total="total" :small="true"
+        layout="total, sizes, prev, pager, next" @size-change="handleSizeChange" @current-change="() => {}" />
+    </div>
   </el-card>
 </template>
 
@@ -53,17 +61,26 @@ import { reactive, ref, onMounted } from 'vue'
 import api from '../../api/modules'
 
 const rows = ref([])
+import { usePagination } from '../../composables/usePagination'
+const { currentPage, pageSize, pageSizes, total, displayRows, resetPage, handleSizeChange } = usePagination(rows)
 const warehouses = ref([])
 const loading = ref(false)
 const query = reactive({ keyword: '', itemType: '', warehouseId: '' })
+const _initQuery = { ...query }
 
 async function load() {
   loading.value = true
   try { rows.value = await api.inventory(query) } finally { loading.value = false }
 }
 function fmt(v) { return v ? String(v).replace('T', ' ').slice(0, 19) : '-' }
+function resetQuery() { Object.assign(query, { ..._initQuery }); resetPage(); load() }
+
 onMounted(async () => {
   load()
   warehouses.value = await api.warehouses()
 })
 </script>
+
+<style scoped>
+.pagination-wrap { display: flex; justify-content: flex-end; margin-top: 12px; }
+</style>

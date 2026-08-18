@@ -1,17 +1,22 @@
 <template>
   <el-container class="layout">
-    <el-aside width="220px" class="aside">
+    <el-aside :width="collapsed ? '64px' : '220px'" class="aside">
       <div class="logo">
         <el-icon :size="26" color="#fff"><OfficeBuilding /></el-icon>
-        <span>全力模具ERP</span>
+        <span v-show="!collapsed">全力模具ERP</span>
+        <div class="collapse-btn" @click="collapsed = !collapsed">
+          <el-icon :size="18"><component :is="collapsed ? Expand : Fold" /></el-icon>
+        </div>
       </div>
       <el-menu
         :default-active="$route.path"
         router
+        :collapse="collapsed"
         background-color="#001529"
         text-color="#a6adb4"
         active-text-color="#409eff"
         class="menu"
+        :collapse-transition="false"
       >
         <el-menu-item index="/dashboard">
           <el-icon><Odometer /></el-icon><span>驾驶舱管理</span>
@@ -111,6 +116,7 @@
             @click="router.push(tab.path)"
             @contextmenu.prevent="openCtx($event, tab)"
           >
+            <el-icon v-if="routeIconMap[tab.path]" class="tab-icon"><component :is="routeIconMap[tab.path]" /></el-icon>
             <span class="tab-title">{{ tab.title }}</span>
             <el-icon v-if="tab.path !== '/dashboard'" class="tab-close" @click.stop="closeTab(tab.path)"><Close /></el-icon>
           </div>
@@ -135,12 +141,47 @@ import { computed, watch, ref, reactive, nextTick, onMounted, onUpdated } from '
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useTabsStore } from '../stores/tabs'
+import { Odometer, ShoppingCart, ShoppingCartFull, Box, Calendar, SetUp, CircleCheck, Cpu, Tools, Setting, User, OfficeBuilding, ArrowDown, ArrowLeft, ArrowRight, Close, Fold, Expand } from '@element-plus/icons-vue'
+
+const routeIconMap = {
+  '/dashboard': Odometer,
+  '/sales/orders': ShoppingCart,
+  '/sales/deliveries': ShoppingCart,
+  '/purchase/orders': ShoppingCartFull,
+  '/purchase/receipts': ShoppingCartFull,
+  '/warehouse/inventory': Box,
+  '/warehouse/stock': Box,
+  '/warehouse/ledger': Box,
+  '/warehouse/warnings': Box,
+  '/schedule/shifts': Calendar,
+  '/schedule/work': Calendar,
+  '/production/plans': SetUp,
+  '/production/orders': SetUp,
+  '/production/daily': SetUp,
+  '/quality/inspections': CircleCheck,
+  '/quality/tools': CircleCheck,
+  '/quality/toolapply': CircleCheck,
+  '/quality/toolscrap': CircleCheck,
+  '/quality/calibration': CircleCheck,
+  '/equipment/list': Cpu,
+  '/equipment/maintenance': Cpu,
+  '/mold/list': Tools,
+  '/mold/plans': Tools,
+  '/base/customers': Setting,
+  '/base/suppliers': Setting,
+  '/base/materials': Setting,
+  '/base/products': Setting,
+  '/base/warehouses': Setting,
+  '/base/employees': Setting,
+  '/system/users': User
+}
 
 const auth = useAuthStore()
 const tabs = useTabsStore()
 const router = useRouter()
 const route = useRoute()
 const tabsWrapRef = ref(null)
+const collapsed = ref(false)
 const canScrollLeft = ref(false)
 const canScrollRight = ref(false)
 
@@ -165,7 +206,7 @@ onMounted(checkScroll)
 onUpdated(checkScroll)
 
 watch(() => route.path, () => {
-  if (route.meta.title) tabs.add({ path: route.path, title: route.meta.title })
+  if (route.meta.title) tabs.add({ path: route.path, title: route.meta.title, icon: routeIconMap[route.path]?.name || '' })
   nextTick(() => {
     const el = tabsWrapRef.value
     if (!el) return
@@ -227,28 +268,30 @@ function handleCommand(cmd) {
 
 <style scoped>
 .layout { height: 100%; }
-.aside { background: #001529; overflow-y: auto; }
+.aside { background: #001529; overflow-y: auto; flex-shrink: 0; transition: width .25s ease; }
 .aside::-webkit-scrollbar { width: 4px; }
-.logo { display: flex; align-items: center; gap: 8px; color: #fff; font-size: 18px; font-weight: bold; height: 60px; padding: 0 18px; }
+.logo { display: flex; align-items: center; gap: 8px; color: #fff; font-size: 18px; font-weight: bold; height: 44px; padding: 0 14px; flex-shrink: 0; position: relative; }
+.collapse-btn { position: absolute; right: 0; top: 0; bottom: 0; width: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #a6adb4; transition: all .2s; }
+.collapse-btn:hover { color: #fff; background: rgba(255,255,255,.08); }
 .menu { border-right: none; }
-.header { background: #fff; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 4px rgba(0,21,41,.08); height: 60px; }
+.header { background: #fff; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 4px rgba(0,21,41,.08); height: 44px; padding: 0 16px; flex-shrink: 0; }
 .user { display: flex; align-items: center; gap: 10px; }
 .user-name { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px; }
-.tabs-bar { background: #fff; border-bottom: 1px solid #e8e8e8; padding: 0; display: flex; align-items: center; position: relative; }
-.tabs-wrap { display: flex; gap: 4px; overflow-x: auto; padding: 8px 16px; flex: 1; min-width: 0; }
-.tabs-wrap::-webkit-scrollbar { height: 4px; }
-.tabs-wrap::-webkit-scrollbar-thumb { background: #c0c4cc; border-radius: 2px; }
-.tabs-arrow { flex-shrink: 0; width: 24px; height: 30px; border: 1px solid #d9d9d9; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 4px; color: #666; font-size: 12px; z-index: 1; }
+.tabs-bar { background: #fff; border-bottom: 1px solid #e8e8e8; padding: 0; display: flex; align-items: center; position: relative; height: 42px; flex-shrink: 0; }
+.tabs-wrap { display: flex; gap: 6px; overflow-x: auto; padding: 0 12px; flex: 1; min-width: 0; align-items: center; }
+.tabs-wrap::-webkit-scrollbar { height: 0; }
+.tabs-arrow { flex-shrink: 0; width: 26px; height: 28px; border: 1px solid #d9d9d9; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 4px; color: #666; font-size: 12px; z-index: 1; }
 .tabs-arrow:hover { color: #409eff; border-color: #409eff; background: #ecf5ff; }
-.tabs-arrow.left { margin-left: 8px; }
-.tabs-arrow.right { margin-right: 8px; }
-.tab-item { display: flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; white-space: nowrap; border: 1px solid #d9d9d9; background: #fafafa; color: #666; transition: all .2s; }
+.tabs-arrow.left { margin-left: 4px; }
+.tabs-arrow.right { margin-right: 4px; }
+.tab-item { display: flex; align-items: center; gap: 6px; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; white-space: nowrap; border: 1px solid #d9d9d9; background: #fafafa; color: #666; transition: all .2s; line-height: 1; }
 .tab-item:hover { color: #409eff; border-color: #b3d8ff; background: #ecf5ff; }
 .tab-item.active { color: #fff; background: #409eff; border-color: #409eff; }
-.tab-close { font-size: 12px; border-radius: 50%; padding: 1px; }
+.tab-icon { font-size: 15px; flex-shrink: 0; }
+.tab-close { font-size: 12px; border-radius: 50%; padding: 1px; flex-shrink: 0; }
 .tab-close:hover { background: rgba(0,0,0,.15); }
 .tab-item.active .tab-close:hover { background: rgba(255,255,255,.3); }
-.main { padding: 16px 24px; overflow-y: auto; }
+.main { padding: 16px 24px; overflow-y: auto; flex: 1; min-height: 0; scrollbar-gutter: stable; }
 .ctx-overlay { position: fixed; inset: 0; z-index: 1999; }
 .ctx-menu { position: fixed; z-index: 2000; background: #fff; border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,.18); padding: 4px 0; min-width: 130px; }
 .ctx-item { padding: 7px 16px; font-size: 13px; color: #333; cursor: pointer; white-space: nowrap; }

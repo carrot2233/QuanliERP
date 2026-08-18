@@ -1,18 +1,18 @@
-<template>
+﻿<template>
   <el-card shadow="never">
     <template #header>
       <div style="display:flex;align-items:center;justify-content:space-between">
         <span>设备维护保养/维修记录</span>
-        <el-button type="primary" size="small" @click="openCreate">新增记录</el-button>
+        <el-button type="primary" @click="openCreate">新增记录</el-button>
       </div>
     </template>
 
-    <el-table :data="rows" border stripe v-loading="loading">
+    <el-table :data="displayRows" border stripe v-loading="loading">
       <el-table-column prop="equipmentId" label="设备编号" width="110" align="center">
         <template #default="{ row }">{{ equipments.find(e => e.id === row.equipmentId)?.code || row.equipmentId }}</template>
       </el-table-column>
       <el-table-column prop="equipmentName" label="设备名称" min-width="130" align="center" />
-      <el-table-column prop="maintainDate" label="日期" width="100" align="center">
+      <el-table-column prop="maintainDate" label="日期" width="130" align="center" class-name="col-nowrap">
         <template #default="{ row }">{{ fmt(row.maintainDate) }}</template>
       </el-table-column>
       <el-table-column prop="type" label="类型" width="80" align="center">
@@ -20,19 +20,29 @@
           <el-tag :type="{ 保养: 'success', 维修: 'danger', 点检: 'info' }[row.type]" size="small">{{ row.type }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="content" label="内容" min-width="220" align="center" class="allow-wrap" />
+      <el-table-column prop="content" label="内容" min-width="220" align="center" class="allow-wrap" show-overflow-tooltip />
       <el-table-column prop="cost" label="费用" width="90" align="center">
         <template #default="{ row }">{{ Number(row.cost || 0).toFixed(2) }}</template>
       </el-table-column>
       <el-table-column prop="handler" label="经办人" width="90" align="center" />
       <el-table-column prop="result" label="结果" width="100" align="center" />
-      <el-table-column label="操作" width="140" align="center" fixed="right">
+      <el-table-column label="操作" width="150" align="center" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
-          <el-button link type="danger" size="small" @click="remove(row)">删除</el-button>
+          <div class="op-btns">
+            <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
+            <span class="op-sep">|</span>
+            <el-button link type="danger" @click="remove(row)">删除</el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
+
+    <div class="pagination-wrap">
+      <el-pagination background
+        v-model:current-page="currentPage" v-model:page-size="pageSize"
+        :page-sizes="pageSizes" :total="total" :small="true"
+        layout="total, sizes, prev, pager, next" @size-change="handleSizeChange" @current-change="() => {}" />
+    </div>
 
     <el-dialog v-model="dialogVisible" :title="editing ? '编辑记录' : '新增记录'" width="600px" destroy-on-close>
       <el-form :model="form" label-width="90px">
@@ -70,6 +80,8 @@ import api from '../../api/modules'
 
 const types = ['保养', '维修', '点检']
 const rows = ref([])
+import { usePagination } from '../../composables/usePagination'
+const { currentPage, pageSize, pageSizes, total, displayRows, resetPage, handleSizeChange } = usePagination(rows)
 const equipments = ref([])
 const loading = ref(false)
 const dialogVisible = ref(false)
@@ -110,3 +122,11 @@ onMounted(async () => {
   equipments.value = await api.equipments({})
 })
 </script>
+
+<style scoped>
+.pagination-wrap { display: flex; justify-content: flex-end; margin-top: 12px; }
+:deep(.col-nowrap .cell) { white-space: nowrap !important; overflow: hidden !important; text-overflow: unset !important; }
+.op-btns { display: inline-flex; align-items: center; gap: 0; white-space: nowrap; }
+.op-sep { color: #dcdfe6; margin: 0 6px; font-weight: 300; user-select: none; }
+.op-btns :deep(.el-button) { font-size: 14px; margin: 0; }
+</style>

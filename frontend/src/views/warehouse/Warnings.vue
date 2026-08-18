@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-card shadow="never">
     <template #header>
       <div style="display:flex;align-items:center;justify-content:space-between">
@@ -9,7 +9,7 @@
 
     <el-alert title="库存低于安全库存或为零的物料，请及时安排采购/生产补货。" type="warning" :closable="false" style="margin-bottom:12px" />
 
-    <el-table :data="rows" border stripe v-loading="loading">
+    <el-table :data="displayRows" border stripe v-loading="loading">
       <el-table-column prop="warehouseName" label="仓库" width="110" align="center" />
       <el-table-column prop="itemType" label="类型" width="70" align="center">
         <template #default="{ row }"><el-tag :type="row.itemType === '材料' ? 'warning' : 'primary'" size="small">{{ row.itemType }}</el-tag></template>
@@ -31,6 +31,13 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <div class="pagination-wrap">
+      <el-pagination background
+        v-model:current-page="currentPage" v-model:page-size="pageSize"
+        :page-sizes="pageSizes" :total="total" :small="true"
+        layout="total, sizes, prev, pager, next" @size-change="handleSizeChange" @current-change="() => {}" />
+    </div>
   </el-card>
 </template>
 
@@ -39,6 +46,8 @@ import { ref, onMounted } from 'vue'
 import api from '../../api/modules'
 
 const rows = ref([])
+import { usePagination } from '../../composables/usePagination'
+const { currentPage, pageSize, pageSizes, total, displayRows, resetPage, handleSizeChange } = usePagination(rows)
 const loading = ref(false)
 
 async function load() {
@@ -47,3 +56,7 @@ async function load() {
 }
 onMounted(load)
 </script>
+
+<style scoped>
+.pagination-wrap { display: flex; justify-content: flex-end; margin-top: 12px; }
+</style>

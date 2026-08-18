@@ -1,9 +1,9 @@
-<template>
+﻿<template>
   <el-card shadow="never">
     <template #header>
       <div style="display:flex;align-items:center;justify-content:space-between">
         <span>采购订单</span>
-        <el-button type="primary" size="small" @click="openCreate">新增采购订单</el-button>
+        <el-button type="primary" @click="openCreate">新增采购订单</el-button>
       </div>
     </template>
 
@@ -15,15 +15,16 @@
         </el-select>
       </el-form-item>
       <el-form-item><el-button type="primary" @click="load">查询</el-button></el-form-item>
+      <el-form-item><el-button @click="resetQuery">重置</el-button></el-form-item>
     </el-form>
 
-    <el-table :data="rows" border stripe v-loading="loading">
-      <el-table-column prop="orderNo" label="采购单号" width="140" align="center" />
+    <el-table :data="displayRows" border stripe v-loading="loading">
+      <el-table-column prop="orderNo" label="采购单号" width="180" align="center" class-name="col-nowrap" />
       <el-table-column prop="supplierName" label="供应商" min-width="170" align="center" />
-      <el-table-column prop="orderDate" label="下单日期" width="110" align="center">
+      <el-table-column prop="orderDate" label="下单日期" width="130" align="center" class-name="col-nowrap">
         <template #default="{ row }">{{ fmt(row.orderDate) }}</template>
       </el-table-column>
-      <el-table-column prop="expectDate" label="预计到货" width="110" align="center">
+      <el-table-column prop="expectDate" label="预计到货" width="130" align="center" class-name="col-nowrap">
         <template #default="{ row }">{{ fmt(row.expectDate) }}</template>
       </el-table-column>
       <el-table-column prop="amount" label="金额" width="110" align="center">
@@ -34,21 +35,34 @@
           <el-tag :type="statusTag(row.status)" size="small">{{ row.status }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="180" align="center" fixed="right">
+      <el-table-column label="操作" width="170" align="center" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
-          <el-dropdown v-if="row.status !== '已到货' && row.status !== '完成'" trigger="click" style="margin:0 4px">
-            <el-button link type="warning" size="small">状态</el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item v-for="s in statuses" :key="s" @click="changeStatus(row, s)">{{ s }}</el-dropdown-item>
-              </el-dropdown-menu>
+          <div class="op-btns">
+            <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
+            <template v-if="row.status !== '已到货' && row.status !== '完成'">
+              <span class="op-sep">|</span>
+              <el-dropdown trigger="click">
+                <el-button link type="warning">状态</el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item v-for="s in statuses" :key="s" @click="changeStatus(row, s)">{{ s }}</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+              <span class="op-sep">|</span>
+              <el-button link type="danger" @click="remove(row)">删除</el-button>
             </template>
-          </el-dropdown>
-          <el-button v-if="row.status !== '已到货' && row.status !== '完成'" link type="danger" size="small" @click="remove(row)">删除</el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
+
+    <div class="pagination-wrap">
+      <el-pagination background
+        v-model:current-page="currentPage" v-model:page-size="pageSize"
+        :page-sizes="pageSizes" :total="total" :small="true"
+        layout="total, sizes, prev, pager, next" @size-change="handleSizeChange" @current-change="() => {}" />
+    </div>
 
     <el-dialog v-model="dialogVisible" :title="editing ? '编辑采购订单' : '新增采购订单'" width="820px" destroy-on-close>
       <el-form :model="form" label-width="90px">
@@ -94,6 +108,13 @@
             <template #default="{ $index }"><el-button link type="danger" size="small" @click="form.items.splice($index, 1)">删除</el-button></template>
           </el-table-column>
         </el-table>
+
+    <div class="pagination-wrap">
+      <el-pagination background
+        v-model:current-page="currentPage" v-model:page-size="pageSize"
+        :page-sizes="pageSizes" :total="total" :small="true"
+        layout="total, sizes, prev, pager, next" @size-change="handleSizeChange" @current-change="() => {}" />
+    </div>
         <el-button size="small" style="margin-top:8px" @click="form.items.push({ materialId: null, qty: 1, price: 0 })">+ 添加明细</el-button>
       </el-form>
       <template #footer>
@@ -111,12 +132,15 @@ import api from '../../api/modules'
 
 const statuses = ['草稿', '已下单', '部分到货', '已到货', '完成', '取消']
 const rows = ref([])
+import { usePagination } from '../../composables/usePagination'
+const { currentPage, pageSize, pageSizes, total, displayRows, resetPage, handleSizeChange } = usePagination(rows)
 const suppliers = ref([])
 const materials = ref([])
 const loading = ref(false)
 const dialogVisible = ref(false)
 const editing = ref(false)
 const query = reactive({ keyword: '', status: '' })
+const _initQuery = { ...query }
 const form = reactive({})
 
 async function load() {
@@ -174,9 +198,19 @@ function statusTag(s) {
   return { 草稿: 'info', 已下单: 'primary', 部分到货: 'warning', 已到货: 'success', 完成: 'success', 取消: 'danger' }[s] || 'info'
 }
 function fmt(v) { return v ? String(v).slice(0, 10) : '-' }
+function resetQuery() { Object.assign(query, { ..._initQuery }); resetPage(); load() }
+
 onMounted(async () => {
   load()
   suppliers.value = await api.suppliers()
   materials.value = await api.materials()
 })
 </script>
+
+<style scoped>
+.pagination-wrap { display: flex; justify-content: flex-end; margin-top: 12px; }
+:deep(.col-nowrap .cell) { white-space: nowrap !important; overflow: hidden !important; text-overflow: unset !important; }
+.op-btns { display: inline-flex; align-items: center; gap: 0; white-space: nowrap; }
+.op-sep { color: #dcdfe6; margin: 0 6px; font-weight: 300; user-select: none; }
+.op-btns :deep(.el-button) { font-size: 14px; margin: 0; }
+</style>
