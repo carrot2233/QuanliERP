@@ -3,7 +3,7 @@
     <template #header>
       <div style="display:flex;align-items:center;justify-content:space-between">
         <span>库存预警</span>
-        <el-button size="small" type="primary" @click="load">刷新</el-button>
+        <el-button @click="load">刷新</el-button>
       </div>
     </template>
 

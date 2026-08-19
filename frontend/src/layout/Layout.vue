@@ -268,12 +268,12 @@ function handleCommand(cmd) {
 
 <style scoped>
 .layout { height: 100%; }
-.aside { background: #001529; overflow-y: auto; flex-shrink: 0; transition: width .25s ease; }
-.aside::-webkit-scrollbar { width: 4px; }
+.aside { background: #001529; flex-shrink: 0; transition: width .25s ease; display: flex; flex-direction: column; overflow: hidden; }
 .logo { display: flex; align-items: center; gap: 8px; color: #fff; font-size: 18px; font-weight: bold; height: 44px; padding: 0 14px; flex-shrink: 0; position: relative; }
 .collapse-btn { position: absolute; right: 0; top: 0; bottom: 0; width: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #a6adb4; transition: all .2s; }
 .collapse-btn:hover { color: #fff; background: rgba(255,255,255,.08); }
-.menu { border-right: none; }
+.menu { border-right: none; overflow-y: auto; flex: 1; min-height: 0; }
+.menu::-webkit-scrollbar { width: 4px; }
 .header { background: #fff; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 4px rgba(0,21,41,.08); height: 44px; padding: 0 16px; flex-shrink: 0; }
 .user { display: flex; align-items: center; gap: 10px; }
 .user-name { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px; }

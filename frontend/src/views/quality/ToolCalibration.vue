@@ -44,7 +44,7 @@
         layout="total, sizes, prev, pager, next" @size-change="handleSizeChange" @current-change="() => {}" />
     </div>
 
-    <el-dialog v-model="dialogVisible" :title="editing ? '编辑检定单' : '新增检定单'" width="660px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="editing ? '编辑检定单' : '新增检定单'" width="760px" destroy-on-close>
       <el-form :model="form" label-width="90px">
         <el-form-item label="检定单号"><el-input v-model="form.calibrationNo" placeholder="留空自动生成" /></el-form-item>
         <el-row :gutter="10">

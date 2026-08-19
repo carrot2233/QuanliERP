@@ -9,7 +9,7 @@ import CrudPage from '../../components/CrudPage.vue'
 
 const columns = [
   { prop: 'code', label: '零件编号', width: 130, className: 'col-nowrap' },
-  { prop: 'name', label: '产品名称' },
+  { prop: 'name', label: '产品名称', minWidth: 180 },
   { prop: 'specification', label: '规格尺寸', minWidth: 140 },
   { prop: 'material', label: '材质', width: 110 },
   { prop: 'custPartNo', label: '客户零件号', width: 130, className: 'col-nowrap' },

@@ -4,7 +4,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between">
         <span>库存查询</span>
         <div>
-          <el-button size="small" @click="load">刷新</el-button>
+          <el-button @click="load">刷新</el-button>
         </div>
       </div>
     </template>
@@ -30,10 +30,10 @@
       <el-table-column prop="itemType" label="类型" width="70" align="center">
         <template #default="{ row }"><el-tag :type="row.itemType === '材料' ? 'warning' : 'primary'" size="small">{{ row.itemType }}</el-tag></template>
       </el-table-column>
-      <el-table-column prop="code" label="编号" width="110" align="center" />
+      <el-table-column prop="code" label="编号" width="90" align="center" />
       <el-table-column prop="name" label="名称" min-width="160" align="center" />
       <el-table-column prop="specification" label="规格尺寸" min-width="170" align="center" />
-      <el-table-column prop="qty" label="库存数量" width="100" align="center" />
+      <el-table-column prop="qty" label="库存数量" width="90" align="center" />
       <el-table-column prop="safeStock" label="安全库存" width="90" align="center" />
       <el-table-column prop="unit" label="单位" width="60" align="center" />
       <el-table-column prop="stockStatus" label="状态" width="80" align="center">
@@ -42,7 +42,7 @@
         </template>
       </el-table-column>
       <el-table-column prop="location" label="库位" width="100" align="center" />
-      <el-table-column prop="updatedAt" label="更新时间" width="160" align="center">
+      <el-table-column prop="updatedAt" label="更新时间" width="180" align="center" class-name="col-nowrap">
         <template #default="{ row }">{{ fmt(row.updatedAt) }}</template>
       </el-table-column>
     </el-table>

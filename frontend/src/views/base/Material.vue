@@ -15,7 +15,7 @@ const columns = [
   { prop: 'category', label: '类别', width: 90 },
   { prop: 'unit', label: '单位', width: 60 },
   { prop: 'unitPrice', label: '单价', width: 80, type: 'money' },
-  { prop: 'minStock', label: '安全库存', width: 80 },
+  { prop: 'minStock', label: '安全库存', width: 90 },
   { prop: 'remark', label: '备注', minWidth: 120 }
 ]
 

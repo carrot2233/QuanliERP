@@ -17,11 +17,14 @@ api.interceptors.response.use(
   res => res.data,
   err => {
     const msg = err.response?.data?.message || err.message || '请求失败'
-    if (err.response?.status === 401) {
+    const isLogin = err.config?.url?.includes('/Auth/login')
+    if (err.response?.status === 401 && !isLogin) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       router.push('/login')
       ElMessage.warning('登录已过期，请重新登录')
+    } else if (err.response?.status === 401 && isLogin) {
+      ElMessage.error(typeof msg === 'string' ? msg : '验证码错误')
     } else {
       ElMessage.error(typeof msg === 'string' ? msg : '请求失败')
     }

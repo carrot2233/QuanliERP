@@ -64,7 +64,7 @@
         layout="total, sizes, prev, pager, next" @size-change="handleSizeChange" @current-change="() => {}" />
     </div>
 
-    <el-dialog v-model="dialogVisible" :title="editing ? '编辑设备' : '新增设备'" width="680px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="editing ? '编辑设备' : '新增设备'" width="800px" destroy-on-close>
       <el-form :model="form" label-width="100px">
         <el-row :gutter="10">
           <el-col :span="8">

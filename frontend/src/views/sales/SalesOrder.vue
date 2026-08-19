@@ -66,7 +66,7 @@
         layout="total, sizes, prev, pager, next" @size-change="handleSizeChange" @current-change="() => {}" />
     </div>
 
-    <el-dialog v-model="dialogVisible" :title="editing ? '编辑订单' : '新增订单'" width="820px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="editing ? '编辑订单' : '新增订单'" width="900px" destroy-on-close>
       <el-form :model="form" label-width="90px">
         <el-row :gutter="10">
           <el-col :span="8">
@@ -100,10 +100,10 @@
           <el-table-column label="规格" width="150" align="center">
             <template #default="{ row }">{{ productSpec(row.productId) }}</template>
           </el-table-column>
-          <el-table-column label="数量" width="120" align="center">
+          <el-table-column label="数量" width="140" align="center">
             <template #default="{ row }"><el-input-number v-model="row.qty" :min="1" style="width:100%" /></template>
           </el-table-column>
-          <el-table-column label="单价" width="120" align="center">
+          <el-table-column label="单价" width="140" align="center">
             <template #default="{ row }"><el-input-number v-model="row.price" :min="0" :precision="2" style="width:100%" /></template>
           </el-table-column>
           <el-table-column label="金额" width="110" align="center">

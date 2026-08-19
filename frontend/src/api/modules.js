@@ -3,6 +3,7 @@ import api from './index'
 export default {
   // 认证
   login: data => api.post('/Auth/login', data),
+  captcha: () => api.get('/Auth/captcha'),
   me: () => api.get('/Auth/me'),
 
   // 基础数据

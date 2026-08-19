@@ -13,12 +13,24 @@ namespace QuanliERP.Api.Controllers
     {
         private readonly AppDbContext _db;
         private readonly JwtService _jwt;
-        public AuthController(AppDbContext db, JwtService jwt) { _db = db; _jwt = jwt; }
+        private readonly CaptchaService _captcha;
+        public AuthController(AppDbContext db, JwtService jwt, CaptchaService captcha) { _db = db; _jwt = jwt; _captcha = captcha; }
+
+        [HttpGet("captcha")]
+        [AllowAnonymous]
+        public IActionResult GetCaptcha()
+        {
+            var (key, image) = _captcha.Generate();
+            return Ok(new { key, image });
+        }
 
         [HttpPost("login")]
         [AllowAnonymous]
         public async Task<IActionResult> Login(LoginRequest req)
         {
+            if (!_captcha.Validate(req.CaptchaKey, req.CaptchaCode))
+                return Unauthorized(new { message = "验证码错误" });
+
             var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == req.Username);
             if (user == null || !BCrypt.Net.BCrypt.Verify(req.Password, user.PasswordHash))
                 return Unauthorized(new { message = "用户名或密码错误" });

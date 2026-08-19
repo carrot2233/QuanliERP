@@ -4,6 +4,8 @@ namespace QuanliERP.Api.Dtos
     {
         public string Username { get; set; } = "";
         public string Password { get; set; } = "";
+        public string CaptchaKey { get; set; } = "";
+        public string CaptchaCode { get; set; } = "";
     }
 
     public class LoginResponse

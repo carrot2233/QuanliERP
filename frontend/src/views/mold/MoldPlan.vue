@@ -39,7 +39,7 @@
           {{ fmt(row.planArrival) }} / {{ fmt(row.actualArrival) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="150" align="center" fixed="right">
+      <el-table-column label="操作" width="180" align="center" fixed="right">
         <template #default="{ row }">
           <div class="op-btns">
             <el-button link type="primary" @click="openDetail(row)">阶段</el-button>
@@ -59,7 +59,7 @@
         layout="total, sizes, prev, pager, next" @size-change="handleSizeChange" @current-change="() => {}" />
     </div>
 
-    <el-dialog v-model="dialogVisible" :title="editing ? '编辑制造计划' : '新增制造计划'" width="760px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="editing ? '编辑制造计划' : '新增制造计划'" width="920px" destroy-on-close>
       <el-form :model="form" label-width="100px">
         <el-row :gutter="10">
           <el-col :span="8">
@@ -120,26 +120,26 @@
         </el-row>
         <el-divider content-position="left">制造阶段（编程2D → 编程3D → 2D加工 → 淬火 → 投线 → 线切割 → 机钳装配 → 3D精加工 → 合模装配 → 研合 → 调试）</el-divider>
         <el-table :data="form.stages" border size="small">
-          <el-table-column label="阶段" width="120">
+          <el-table-column label="阶段" width="128">
             <template #default="{ row }">
               <el-select v-model="row.stageName" filterable allow-create style="width:100%">
                 <el-option v-for="s in stageNames" :key="s" :label="s" :value="s" />
               </el-select>
             </template>
           </el-table-column>
-          <el-table-column label="计划开始" width="130">
+          <el-table-column label="计划开始" width="140">
             <template #default="{ row }"><el-date-picker v-model="row.planStart" type="date" value-format="YYYY-MM-DD" style="width:100%" /></template>
           </el-table-column>
-          <el-table-column label="计划结束" width="130">
+          <el-table-column label="计划结束" width="140">
             <template #default="{ row }"><el-date-picker v-model="row.planEnd" type="date" value-format="YYYY-MM-DD" style="width:100%" /></template>
           </el-table-column>
-          <el-table-column label="实际开始" width="130">
+          <el-table-column label="实际开始" width="140">
             <template #default="{ row }"><el-date-picker v-model="row.actualStart" type="date" value-format="YYYY-MM-DD" style="width:100%" /></template>
           </el-table-column>
-          <el-table-column label="实际结束" width="130">
+          <el-table-column label="实际结束" width="140">
             <template #default="{ row }"><el-date-picker v-model="row.actualEnd" type="date" value-format="YYYY-MM-DD" style="width:100%" /></template>
           </el-table-column>
-          <el-table-column label="状态" width="100">
+          <el-table-column label="状态" width="140">
             <template #default="{ row }">
               <el-select v-model="row.status" style="width:100%">
                 <el-option v-for="s in stageStatuses" :key="s" :label="s" :value="s" />
@@ -230,7 +230,7 @@ async function load() {
 function openCreate() {
   editing.value = false
   Object.keys(form).forEach(k => delete form[k])
-  Object.assign(form, { planNo: '', customerId: null, projectName: '', moldNo: '', moldName: '', processName: '', tonnage: 0, moldStatus: '排产中', planArrival: '', actualArrival: '', remark: '', stages: stageNames.map(n => ({ id: 0, stageName: n, planStart: '', planEnd: '', actualStart: '', actualEnd: '', status: '未开始', remark: '' })) })
+  Object.assign(form, { planNo: '', customerId: null, projectName: '', moldNo: '', moldName: '', processName: '', tonnage: 0, moldStatus: '排产中', planArrival: null, actualArrival: null, remark: '', stages: stageNames.map(n => ({ id: 0, stageName: n, planStart: null, planEnd: null, actualStart: null, actualEnd: null, status: '未开始', remark: '' })) })
   dialogVisible.value = true
 }
 async function openEdit(row) {

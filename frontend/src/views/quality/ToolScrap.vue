@@ -40,7 +40,7 @@
         layout="total, sizes, prev, pager, next" @size-change="handleSizeChange" @current-change="() => {}" />
     </div>
 
-    <el-dialog v-model="dialogVisible" :title="editing ? '编辑报废单' : '新增报废单'" width="640px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="editing ? '编辑报废单' : '新增报废单'" width="760px" destroy-on-close>
       <el-form :model="form" label-width="90px">
         <el-form-item label="报废单号"><el-input v-model="form.scrapNo" placeholder="留空自动生成" /></el-form-item>
         <el-form-item label="器具名称"><el-input v-model="form.toolName" /></el-form-item>

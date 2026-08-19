@@ -13,6 +13,12 @@
           <el-input v-model="form.password" type="password" placeholder="密码" size="large" show-password :prefix-icon="Lock" />
         </el-form-item>
         <el-form-item>
+          <div class="captcha-row">
+            <el-input v-model="form.captchaCode" placeholder="验证码" size="large" maxlength="4" style="flex:1" :prefix-icon="Key" />
+            <img v-if="captchaImg" :src="captchaImg" class="captcha-img" @click="loadCaptcha" title="点击刷新" />
+          </div>
+        </el-form-item>
+        <el-form-item>
           <el-button type="primary" size="large" style="width:100%" :loading="loading" @click="doLogin">登 录</el-button>
         </el-form-item>
       </el-form>
@@ -22,25 +28,41 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Lock } from '@element-plus/icons-vue'
+import { User, Lock, Key } from '@element-plus/icons-vue'
 import { useAuthStore } from '../stores/auth'
+import api from '../api/modules'
 
 const router = useRouter()
 const auth = useAuthStore()
-const form = reactive({ username: 'admin', password: 'admin123' })
+const form = reactive({ username: 'admin', password: 'admin123', captchaKey: '', captchaCode: '' })
 const loading = ref(false)
+const captchaImg = ref('')
+
+async function loadCaptcha() {
+  try {
+    const res = await api.captcha()
+    captchaImg.value = res.image
+    form.captchaKey = res.key
+    form.captchaCode = ''
+  } catch {
+    captchaImg.value = ''
+  }
+}
+
+onMounted(loadCaptcha)
 
 async function doLogin() {
   if (!form.username || !form.password) return ElMessage.warning('请输入用户名和密码')
+  if (!form.captchaCode) return ElMessage.warning('请输入验证码')
   loading.value = true
   try {
-    await auth.login(form.username, form.password)
+    await auth.login(form.username, form.password, form.captchaKey, form.captchaCode)
     router.push('/dashboard')
-  } catch (e) {
-    ElMessage.error(e?.response?.data?.message || '登录失败')
+  } catch {
+    loadCaptcha()
   } finally {
     loading.value = false
   }
@@ -54,5 +76,7 @@ async function doLogin() {
 .login-title { text-align: center; margin-bottom: 28px; }
 .login-title h2 { color: #1f3b73; margin-bottom: 6px; }
 .login-title p { color: #999; font-size: 13px; }
+.captcha-row { display: flex; gap: 12px; width: 100%; align-items: center; }
+.captcha-img { height: 40px; width: 120px; border-radius: 4px; border: 1px solid #dcdfe6; cursor: pointer; flex-shrink: 0; }
 .tips { text-align: center; color: #bbb; font-size: 12px; margin-top: 10px; }
 </style>

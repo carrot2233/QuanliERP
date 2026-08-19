@@ -71,7 +71,7 @@
         layout="total, sizes, prev, pager, next" @size-change="handleSizeChange" @current-change="() => {}" />
     </div>
 
-    <el-dialog v-model="dialogVisible" :title="editing ? '编辑生产计划' : '新增生产计划'" width="720px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="editing ? '编辑生产计划' : '新增生产计划'" width="800px" destroy-on-close>
       <el-form :model="form" label-width="100px">
         <el-row :gutter="10">
           <el-col :span="8">
@@ -160,7 +160,7 @@ async function load() {
 function openCreate() {
   editing.value = false
   Object.keys(form).forEach(k => delete form[k])
-  Object.assign(form, { planNo: '', customerId: null, projectName: '', productId: null, materialId: null, oneOutputs: 1, planQty: 1, plannedStart: new Date().toISOString().slice(0, 10), plannedEnd: '', remark: '' })
+  Object.assign(form, { planNo: '', customerId: null, projectName: '', productId: null, materialId: null, oneOutputs: 1, planQty: 1, plannedStart: new Date().toISOString().slice(0, 10), plannedEnd: new Date().toISOString().slice(0, 10), remark: '' })
   dialogVisible.value = true
 }
 async function openEdit(row) {
