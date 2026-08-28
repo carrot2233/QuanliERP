@@ -76,6 +76,24 @@
           <el-menu-item index="/base/warehouses">仓库管理</el-menu-item>
           <el-menu-item index="/base/employees">员工管理</el-menu-item>
         </el-sub-menu>
+        <el-sub-menu index="oa">
+          <template #title><el-icon><EditPen /></el-icon><span>协同办公</span></template>
+          <el-menu-item index="/oa/notices">通知公告</el-menu-item>
+          <el-menu-item index="/oa/messages">消息中心</el-menu-item>
+          <el-menu-item index="/oa/my-flow">我的流程</el-menu-item>
+          <el-menu-item index="/oa/todo">待办事项</el-menu-item>
+          <el-menu-item index="/oa/flow-design">流程设计</el-menu-item>
+          <el-menu-item index="/oa/done">已办事项</el-menu-item>
+          <el-menu-item index="/oa/files">文件管理</el-menu-item>
+        </el-sub-menu>
+        <el-sub-menu index="hr">
+          <template #title><el-icon><UserFilled /></el-icon><span>人力资源管理</span></template>
+          <el-menu-item index="/hr/employees">员工档案</el-menu-item>
+          <el-menu-item index="/hr/attendance">考勤管理</el-menu-item>
+          <el-menu-item index="/hr/leave">请假管理</el-menu-item>
+          <el-menu-item index="/hr/payroll">薪资管理</el-menu-item>
+          <el-menu-item index="/hr/training">培训管理</el-menu-item>
+        </el-sub-menu>
         <el-menu-item v-if="auth.role === 'admin'" index="/system/users">
           <el-icon><User /></el-icon><span>系统管理</span>
         </el-menu-item>
@@ -141,7 +159,7 @@ import { computed, watch, ref, reactive, nextTick, onMounted, onUpdated } from '
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useTabsStore } from '../stores/tabs'
-import { Odometer, ShoppingCart, ShoppingCartFull, Box, Calendar, SetUp, CircleCheck, Cpu, Tools, Setting, User, OfficeBuilding, ArrowDown, ArrowLeft, ArrowRight, Close, Fold, Expand } from '@element-plus/icons-vue'
+import { Odometer, ShoppingCart, ShoppingCartFull, Box, Calendar, SetUp, CircleCheck, Cpu, Tools, Setting, User, OfficeBuilding, ArrowDown, ArrowLeft, ArrowRight, Close, Fold, Expand, EditPen, UserFilled } from '@element-plus/icons-vue'
 
 const routeIconMap = {
   '/dashboard': Odometer,
@@ -173,7 +191,19 @@ const routeIconMap = {
   '/base/products': Setting,
   '/base/warehouses': Setting,
   '/base/employees': Setting,
-  '/system/users': User
+  '/system/users': User,
+  '/oa/notices': EditPen,
+  '/oa/messages': EditPen,
+  '/oa/my-flow': EditPen,
+  '/oa/todo': EditPen,
+  '/oa/flow-design': EditPen,
+  '/oa/done': EditPen,
+  '/oa/files': EditPen,
+  '/hr/employees': UserFilled,
+  '/hr/attendance': UserFilled,
+  '/hr/leave': UserFilled,
+  '/hr/payroll': UserFilled,
+  '/hr/training': UserFilled
 }
 
 const auth = useAuthStore()

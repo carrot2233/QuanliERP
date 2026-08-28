@@ -255,6 +255,125 @@ namespace QuanliERP.Api.Data
                 new EquipmentMaintenance { EquipmentId = eq1.Id, MaintainDate = new DateTime(2026, 7, 15), Type = "保养", Content = "液压油更换、滑块导轨润滑", Cost = 1500, Handler = "维修班", Result = "正常" },
                 new EquipmentMaintenance { EquipmentId = eq5.Id, MaintainDate = new DateTime(2026, 8, 1), Type = "维修", Content = "主轴轴承异响检修", Cost = 3200, Handler = "维修班", Result = "维修中" });
 
+            // ========== 协同办公 ==========
+
+            // ---------- 通知公告 ----------
+            db.Notices.AddRange(
+                new Notice { Title = "【示例】关于中秋节放假的通知", Content = "全体员工：根据国家法定节假日规定，中秋节放假3天，具体安排另行通知。", Status = "有效", Creator = "系统管理员" },
+                new Notice { Title = "【示例】安全生产月活动通知", Content = "本月为安全生产月，请各部门组织安全培训，重点检查设备安全。", Status = "有效", Creator = "系统管理员" },
+                new Notice { Title = "【示例】新员工入职培训通知", Content = "本月新入职员工请于周五下午2点到三楼培训室参加入职培训。", Status = "有效", Creator = "系统管理员" },
+                new Notice { Title = "【示例】设备例行保养通知", Content = "各车间设备请在每周五下班后进行例行保养，设备部负责监督。", Status = "有效", Creator = "系统管理员" },
+                new Notice { Title = "【示例】质量管理体系年审通知", Content = "公司将于下月接受ISO9001质量管理体系年度审核，请各部门做好准备。", Status = "有效", Creator = "系统管理员" });
+
+            // ---------- 消息 ----------
+            db.Messages.AddRange(
+                new Message { MsgType = "审批消息", Recipient = "系统管理员", Content = "请假流程 2026-08-27 23:54:16--流程已完成", Creator = "朱天佑" },
+                new Message { MsgType = "审批消息", Recipient = "杨霞", Content = "请假流程 2026-08-27 23:54:16--流程待处理", Creator = "朱天佑" },
+                new Message { MsgType = "审批消息", Recipient = "朱天佑", Content = "请假流程 2026-08-27 23:54:16--流程待处理", Creator = "系统管理员" },
+                new Message { MsgType = "系统消息", Recipient = "系统管理员", Content = "【示例】系统将于本周六凌晨进行数据库备份", Creator = "系统管理员" },
+                new Message { MsgType = "审批消息", Recipient = "系统管理员", Content = "【示例】采购付款申请已提交", Creator = "系统管理员" },
+                new Message { MsgType = "审批消息", Recipient = "系统管理员", Content = "【示例】请假申请GH003已审批通过", Creator = "系统管理员" },
+                new Message { MsgType = "待办消息", Recipient = "系统管理员", Content = "【示例】您有1条待办流程需要处理", Creator = "系统管理员" },
+                new Message { MsgType = "系统消息", Recipient = "系统管理员", Content = "【示例】采购询价单XJ202608001等待审核", Creator = "系统管理员" });
+
+            // ---------- 流程设计 ----------
+            var fd1 = new FlowDesign { FlowNo = "LC001", FlowName = "请假流程", Remark = "员工请假审批流程", Sort = 1, Status = "有效", DeptName = "行政部" };
+            fd1.Nodes.Add(new FlowNode { NodeName = "部门主管审批", Approver = "系统管理员", Sort = 1 });
+            fd1.Nodes.Add(new FlowNode { NodeName = "人事经理审批", Approver = "系统管理员", Sort = 2 });
+            fd1.Nodes.Add(new FlowNode { NodeName = "总经理审批", Approver = "系统管理员", Sort = 3 });
+
+            var fd2 = new FlowDesign { FlowNo = "1787845972542", FlowName = "加班申请", Remark = "员工加班审批流程", Sort = 2, Status = "有效", DeptName = "生产部" };
+            fd2.Nodes.Add(new FlowNode { NodeName = "部门主管审批", Approver = "系统管理员", Sort = 1 });
+            fd2.Nodes.Add(new FlowNode { NodeName = "生产经理审批", Approver = "系统管理员", Sort = 2 });
+            db.FlowDesigns.AddRange(fd1, fd2);
+
+            // ---------- 流程实例 ----------
+            var fi1 = new FlowInstance
+            {
+                InstanceNo = "1787846051206",
+                InstanceName = "请假流程 2026-08-27 23:54:16",
+                FlowStatus = "审批通过",
+                CurrentNode = "结束",
+                Remark = "家中有事，请假3天",
+                FlowDesignId = 1,
+                Creator = "系统管理员",
+                CreatedAt = new DateTime(2026, 8, 27, 23, 54, 34),
+                FinishedAt = new DateTime(2026, 8, 28, 2, 39, 41)
+            };
+            fi1.Tasks.Add(new FlowTask { NodeName = "部门主管审批", Approver = "系统管理员", Status = "已同意", Comment = "同意", CreatedAt = new DateTime(2026, 8, 27, 23, 54, 34), HandledAt = new DateTime(2026, 8, 27, 23, 54, 38) });
+            fi1.Tasks.Add(new FlowTask { NodeName = "人事经理审批", Approver = "系统管理员", Status = "已同意", Comment = "同意", CreatedAt = new DateTime(2026, 8, 27, 23, 54, 38), HandledAt = new DateTime(2026, 8, 28, 1, 57, 59) });
+            fi1.Tasks.Add(new FlowTask { NodeName = "总经理审批", Approver = "系统管理员", Status = "已同意", Comment = "同意", CreatedAt = new DateTime(2026, 8, 28, 1, 57, 59), HandledAt = new DateTime(2026, 8, 28, 2, 39, 41) });
+            db.FlowInstances.Add(fi1);
+
+            // ---------- 文件管理 ----------
+            db.FileRecords.AddRange(
+                new FileRecord { FileName = "20260828080052742.jpg", FileType = "图片", Category = "物料图片", DeptName = "XX智能制造", Status = "有效", Creator = "系统管理员" },
+                new FileRecord { FileName = "20260828080037746.jpg", FileType = "图片", Category = "物料图片", DeptName = "XX智能制造", Status = "有效", Creator = "系统管理员" },
+                new FileRecord { FileName = "20260828075931927.xlsx", FileType = "表格", Category = "文件", DeptName = "XX智能制造", Status = "有效", Creator = "系统管理员" },
+                new FileRecord { FileName = "【示例】安全生产管理制度.png", FileType = "图片", Category = "行政部", DeptName = "XX智能制造", Status = "有效", Creator = "系统管理员", Remark = "安全生产管理制度" },
+                new FileRecord { FileName = "【示例】年度质量目标分解.png", FileType = "图片", Category = "品质部", DeptName = "XX智能制造", Status = "有效", Creator = "系统管理员", Remark = "年度质量目标分解" },
+                new FileRecord { FileName = "【示例】员工手册.png", FileType = "图片", Category = "行政部", DeptName = "XX智能制造", Status = "有效", Creator = "系统管理员", Remark = "新员工入职手册" },
+                new FileRecord { FileName = "【示例】设备点检表.xls", FileType = "表格", Category = "设备部", DeptName = "XX智能制造", Status = "有效", Creator = "系统管理员", Remark = "日常设备点检记录" },
+                new FileRecord { FileName = "【示例】生产作业指导书.png", FileType = "图片", Category = "生产部", DeptName = "XX智能制造", Status = "有效", Creator = "系统管理员", Remark = "设备操作标准作业" });
+
+            // ========== 人力资源 ==========
+
+            // ---------- 员工档案（补充更多员工以匹配截图） ----------
+            db.Employees.AddRange(
+                new Employee { Code = "GH001", Name = "张淼", Gender = "男", Dept = "行政部", Position = "", Status = "在职" },
+                new Employee { Code = "GH002", Name = "李强", Gender = "男", Dept = "生产部", Position = "生产主管", Status = "在职" },
+                new Employee { Code = "GH003", Name = "王芳", Gender = "女", Dept = "品质部", Position = "质检员", Status = "在职" },
+                new Employee { Code = "GH004", Name = "赵刚", Gender = "男", Dept = "设备部", Position = "设备工程师", Status = "在职" },
+                new Employee { Code = "GH005", Name = "孙丽", Gender = "女", Dept = "采购部", Position = "采购专员", Status = "在职" },
+                new Employee { Code = "GH006", Name = "周杰", Gender = "男", Dept = "销售部", Position = "销售专员", Status = "在职" },
+                new Employee { Code = "GH007", Name = "吴霞", Gender = "女", Dept = "仓储部", Position = "仓管员", Status = "在职" },
+                new Employee { Code = "GH008", Name = "郑宇", Gender = "男", Dept = "技术部", Position = "工艺工程师", Status = "试用" });
+
+            // ---------- 考勤记录 ----------
+            db.Attendances.AddRange(
+                new Attendance { EmpCode = "GH001", EmpName = "张淼", AttendDate = new DateTime(2026, 8, 26), Status = "正常", CheckIn = "08:00", CheckOut = "17:00" },
+                new Attendance { EmpCode = "GH002", EmpName = "李强", AttendDate = new DateTime(2026, 8, 26), Status = "正常", CheckIn = "08:05", CheckOut = "17:02" },
+                new Attendance { EmpCode = "GH003", EmpName = "王芳", AttendDate = new DateTime(2026, 8, 26), Status = "迟到", CheckIn = "08:15", CheckOut = "17:00" },
+                new Attendance { EmpCode = "GH004", EmpName = "赵刚", AttendDate = new DateTime(2026, 8, 26), Status = "正常", CheckIn = "08:00", CheckOut = "17:10" },
+                new Attendance { EmpCode = "GH005", EmpName = "孙丽", AttendDate = new DateTime(2026, 8, 26), Status = "正常", CheckIn = "07:58", CheckOut = "17:00" },
+                new Attendance { EmpCode = "GH006", EmpName = "周杰", AttendDate = new DateTime(2026, 8, 26), Status = "正常", CheckIn = "08:02", CheckOut = "17:05" },
+                new Attendance { EmpCode = "GH007", EmpName = "吴霞", AttendDate = new DateTime(2026, 8, 26), Status = "请假", CheckIn = "", CheckOut = "", Remark = "事假" },
+                new Attendance { EmpCode = "GH008", EmpName = "郑宇", AttendDate = new DateTime(2026, 8, 26), Status = "缺勤", CheckIn = "", CheckOut = "" });
+
+            // ---------- 请假单 ----------
+            db.LeaveRequests.AddRange(
+                new LeaveRequest { LeaveNo = "QJ202609001", EmpCode = "GH003", EmpName = "王芳", LeaveType = "事假", StartDate = new DateTime(2026, 9, 1), EndDate = new DateTime(2026, 9, 2), Days = 2, Reason = "家中有事", Status = "审批通过", Approver = "系统管理员", ApprovedAt = new DateTime(2026, 8, 26) },
+                new LeaveRequest { LeaveNo = "QJ202609002", EmpCode = "GH005", EmpName = "孙丽", LeaveType = "病假", StartDate = new DateTime(2026, 9, 3), EndDate = new DateTime(2026, 9, 3), Days = 1, Reason = "感冒发烧", Status = "审批通过", Approver = "系统管理员", ApprovedAt = new DateTime(2026, 8, 26) },
+                new LeaveRequest { LeaveNo = "QJ202609003", EmpCode = "GH006", EmpName = "周杰", LeaveType = "年假", StartDate = new DateTime(2026, 9, 5), EndDate = new DateTime(2026, 9, 7), Days = 3, Reason = "休年假", Status = "待审批" },
+                new LeaveRequest { LeaveNo = "QJ202609004", EmpCode = "GH008", EmpName = "郑宇", LeaveType = "事假", StartDate = new DateTime(2026, 9, 1), EndDate = new DateTime(2026, 9, 1), Days = 1, Reason = "个人事务", Status = "待审批" },
+                new LeaveRequest { LeaveNo = "QJ202609005", EmpCode = "GH002", EmpName = "李强", LeaveType = "调休", StartDate = new DateTime(2026, 9, 4), EndDate = new DateTime(2026, 9, 4), Days = 1, Reason = "加班调休", Status = "审批通过", Approver = "系统管理员", ApprovedAt = new DateTime(2026, 8, 26) },
+                new LeaveRequest { LeaveNo = "QJ202609006", EmpCode = "GH007", EmpName = "吴霞", LeaveType = "事假", StartDate = new DateTime(2026, 9, 2), EndDate = new DateTime(2026, 9, 3), Days = 2, Reason = "家中有事", Status = "待审批" });
+
+            // ---------- 薪资单 ----------
+            db.Payrolls.AddRange(
+                new Payroll { EmpCode = "GH002", EmpName = "李强", PayMonth = "2026-08", BaseSalary = 8000, PostSalary = 2000, Performance = 1500, Overtime = 500, Bonus = 0, Deduction = 0, SocialInsurance = 800, HousingFund = 960, ActualSalary = 10240, Status = "已发放" },
+                new Payroll { EmpCode = "GH003", EmpName = "王芳", PayMonth = "2026-08", BaseSalary = 5000, PostSalary = 800, Performance = 800, Overtime = 200, Bonus = 100, Deduction = 50, SocialInsurance = 500, HousingFund = 600, ActualSalary = 5750, Status = "已发放" },
+                new Payroll { EmpCode = "GH004", EmpName = "赵刚", PayMonth = "2026-08", BaseSalary = 6000, PostSalary = 1200, Performance = 1000, Overtime = 300, Bonus = 0, Deduction = 0, SocialInsurance = 600, HousingFund = 720, ActualSalary = 7180, Status = "已发放" },
+                new Payroll { EmpCode = "GH005", EmpName = "孙丽", PayMonth = "2026-08", BaseSalary = 5500, PostSalary = 800, Performance = 600, Overtime = 0, Bonus = 200, Deduction = 0, SocialInsurance = 550, HousingFund = 660, ActualSalary = 5890, Status = "已发放" },
+                new Payroll { EmpCode = "GH006", EmpName = "周杰", PayMonth = "2026-08", BaseSalary = 5000, PostSalary = 500, Performance = 1200, Overtime = 0, Bonus = 300, Deduction = 0, SocialInsurance = 500, HousingFund = 600, ActualSalary = 5900, Status = "已发放" },
+                new Payroll { EmpCode = "GH007", EmpName = "吴霞", PayMonth = "2026-08", BaseSalary = 4500, PostSalary = 600, Performance = 500, Overtime = 100, Bonus = 0, Deduction = 0, SocialInsurance = 450, HousingFund = 540, ActualSalary = 4710, Status = "待发放" });
+
+            // ---------- 培训记录 ----------
+            var tr1 = new Training { TrainNo = "PX202609001", TrainName = "安全生产培训", TrainType = "内部培训", Trainer = "安全员", TrainDate = new DateTime(2026, 9, 5), Location = "三楼培训室", Status = "已完成", Remark = "全员必修" };
+            tr1.Participants.Add(new TrainingParticipant { EmpCode = "GH001", EmpName = "张淼", Result = "合格" });
+            tr1.Participants.Add(new TrainingParticipant { EmpCode = "GH002", EmpName = "李强", Result = "合格" });
+            tr1.Participants.Add(new TrainingParticipant { EmpCode = "GH003", EmpName = "王芳", Result = "合格" });
+            tr1.Participants.Add(new TrainingParticipant { EmpCode = "GH004", EmpName = "赵刚", Result = "合格" });
+
+            var tr2 = new Training { TrainNo = "PX202609002", TrainName = "设备操作规程培训", TrainType = "内部培训", Trainer = "设备工程师", TrainDate = new DateTime(2026, 9, 10), Location = "车间现场", Status = "计划中" };
+            tr2.Participants.Add(new TrainingParticipant { EmpCode = "GH004", EmpName = "赵刚", Result = "待考核" });
+            tr2.Participants.Add(new TrainingParticipant { EmpCode = "GH008", EmpName = "郑宇", Result = "待考核" });
+
+            var tr3 = new Training { TrainNo = "PX202609003", TrainName = "质量管理体系培训", TrainType = "外部培训", Trainer = "外部讲师", TrainDate = new DateTime(2026, 9, 15), Location = "三楼培训室", Status = "计划中" };
+            var tr4 = new Training { TrainNo = "PX202609004", TrainName = "ERP系统操作培训", TrainType = "内部培训", Trainer = "系统管理员", TrainDate = new DateTime(2026, 9, 20), Location = "三楼培训室", Status = "计划中" };
+            var tr5 = new Training { TrainNo = "PX202609005", TrainName = "消防安全演练", TrainType = "内部培训", Trainer = "安全员", TrainDate = new DateTime(2026, 9, 25), Location = "厂区", Status = "计划中" };
+            db.Trainings.AddRange(tr1, tr2, tr3, tr4, tr5);
+
             db.SaveChanges();
         }
     }

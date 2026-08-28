@@ -46,7 +46,21 @@ const routes = [
       { path: 'base/warehouses', name: 'Warehouses', component: () => import('../views/base/Warehouse.vue'), meta: { title: '仓库管理' } },
       { path: 'base/employees', name: 'Employees', component: () => import('../views/base/Employee.vue'), meta: { title: '员工管理' } },
       // 系统管理
-      { path: 'system/users', name: 'Users', component: () => import('../views/system/User.vue'), meta: { title: '用户管理', adminOnly: true } }
+      { path: 'system/users', name: 'Users', component: () => import('../views/system/User.vue'), meta: { title: '用户管理', adminOnly: true } },
+      // 协同办公
+      { path: 'oa/notices', name: 'Notices', component: () => import('../views/oa/Notice.vue'), meta: { title: '通知公告' } },
+      { path: 'oa/messages', name: 'Messages', component: () => import('../views/oa/Message.vue'), meta: { title: '消息中心' } },
+      { path: 'oa/my-flow', name: 'MyFlow', component: () => import('../views/oa/MyFlow.vue'), meta: { title: '我的流程' } },
+      { path: 'oa/todo', name: 'TodoFlow', component: () => import('../views/oa/TodoFlow.vue'), meta: { title: '待办事项' } },
+      { path: 'oa/flow-design', name: 'FlowDesign', component: () => import('../views/oa/FlowDesign.vue'), meta: { title: '流程设计' } },
+      { path: 'oa/done', name: 'DoneFlow', component: () => import('../views/oa/DoneFlow.vue'), meta: { title: '已办事项' } },
+      { path: 'oa/files', name: 'FileRecords', component: () => import('../views/oa/FileRecord.vue'), meta: { title: '文件管理' } },
+      // 人力资源管理
+      { path: 'hr/employees', name: 'EmployeeProfiles', component: () => import('../views/hr/EmployeeProfile.vue'), meta: { title: '员工档案' } },
+      { path: 'hr/attendance', name: 'Attendances', component: () => import('../views/hr/Attendance.vue'), meta: { title: '考勤管理' } },
+      { path: 'hr/leave', name: 'LeaveRequests', component: () => import('../views/hr/LeaveRequest.vue'), meta: { title: '请假管理' } },
+      { path: 'hr/payroll', name: 'Payrolls', component: () => import('../views/hr/Payroll.vue'), meta: { title: '薪资管理' } },
+      { path: 'hr/training', name: 'Trainings', component: () => import('../views/hr/Training.vue'), meta: { title: '培训管理' } }
     ]
   },
   { path: '/:pathMatch(.*)*', redirect: '/dashboard' }

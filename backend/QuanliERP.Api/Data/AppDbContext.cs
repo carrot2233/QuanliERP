@@ -49,6 +49,22 @@ namespace QuanliERP.Api.Data
         public DbSet<MoldPlan> MoldPlans => Set<MoldPlan>();
         public DbSet<MoldPlanStage> MoldPlanStages => Set<MoldPlanStage>();
 
+        // 协同办公
+        public DbSet<Notice> Notices => Set<Notice>();
+        public DbSet<Message> Messages => Set<Message>();
+        public DbSet<FlowDesign> FlowDesigns => Set<FlowDesign>();
+        public DbSet<FlowNode> FlowNodes => Set<FlowNode>();
+        public DbSet<FlowInstance> FlowInstances => Set<FlowInstance>();
+        public DbSet<FlowTask> FlowTasks => Set<FlowTask>();
+        public DbSet<FileRecord> FileRecords => Set<FileRecord>();
+
+        // 人力资源
+        public DbSet<Attendance> Attendances => Set<Attendance>();
+        public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
+        public DbSet<Payroll> Payrolls => Set<Payroll>();
+        public DbSet<Training> Trainings => Set<Training>();
+        public DbSet<TrainingParticipant> TrainingParticipants => Set<TrainingParticipant>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<User>().HasIndex(u => u.Username).IsUnique();
@@ -163,6 +179,20 @@ namespace QuanliERP.Api.Data
             modelBuilder.Entity<EquipmentMaintenance>()
                 .HasOne(m => m.Equipment).WithMany()
                 .HasForeignKey(m => m.EquipmentId).OnDelete(DeleteBehavior.Cascade);
+
+            // 协同办公
+            modelBuilder.Entity<FlowNode>()
+                .HasOne(n => n.FlowDesign).WithMany(d => d.Nodes)
+                .HasForeignKey(n => n.FlowDesignId).OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<FlowTask>()
+                .HasOne(t => t.FlowInstance).WithMany(i => i.Tasks)
+                .HasForeignKey(t => t.FlowInstanceId).OnDelete(DeleteBehavior.Cascade);
+
+            // 人力资源
+            modelBuilder.Entity<TrainingParticipant>()
+                .HasOne(p => p.Training).WithMany(t => t.Participants)
+                .HasForeignKey(p => p.TrainingId).OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

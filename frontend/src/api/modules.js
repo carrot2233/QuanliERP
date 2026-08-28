@@ -132,5 +132,34 @@ export default {
   salesTrend: () => api.get('/Dashboard/sales-trend'),
   prodTrend: () => api.get('/Dashboard/production-trend'),
   processDist: () => api.get('/Dashboard/process-distribution'),
-  activities: () => api.get('/Dashboard/recent-activities')
+  activities: () => api.get('/Dashboard/recent-activities'),
+
+  // 协同办公
+  flowDesigns: () => api.get('/FlowDesigns'),
+  flowMy: params => api.get('/FlowInstances/my', { params }),
+  flowTodo: params => api.get('/FlowInstances/todo', { params }),
+  flowDone: params => api.get('/FlowInstances/done', { params }),
+  flowInstance: id => api.get(`/FlowInstances/${id}`),
+  createFlowInstance: data => api.post('/FlowInstances', data),
+  flowApprove: (taskId, data) => api.post(`/FlowInstances/tasks/${taskId}/approve`, data),
+  deleteFlowInstance: id => api.delete(`/FlowInstances/${id}`),
+
+  // 人力资源
+  leaveRequests: params => api.get('/LeaveRequests', { params }),
+  createLeaveRequest: data => api.post('/LeaveRequests', data),
+  updateLeaveRequest: (id, data) => api.put(`/LeaveRequests/${id}`, data),
+  leaveApprove: (id, data) => api.post(`/LeaveRequests/${id}/approve`, data),
+  deleteLeaveRequest: id => api.delete(`/LeaveRequests/${id}`),
+  payrolls: params => api.get('/Payrolls', { params }),
+  createPayroll: data => api.post('/Payrolls', data),
+  updatePayroll: (id, data) => api.put(`/Payrolls/${id}`, data),
+  deletePayroll: id => api.delete(`/Payrolls/${id}`),
+  trainings: params => api.get('/Trainings', { params }),
+  training: id => api.get(`/Trainings/${id}`),
+  createTraining: data => api.post('/Trainings', data),
+  updateTraining: (id, data) => api.put(`/Trainings/${id}`, data),
+  deleteTraining: id => api.delete(`/Trainings/${id}`),
+  addTrainingParticipant: (id, data) => api.post(`/Trainings/${id}/participants`, data),
+  updateTrainingParticipant: (pid, data) => api.put(`/Trainings/participants/${pid}`, data),
+  removeTrainingParticipant: pid => api.delete(`/Trainings/participants/${pid}`)
 }
