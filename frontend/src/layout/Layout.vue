@@ -18,9 +18,15 @@
         class="menu"
         :collapse-transition="false"
       >
-        <el-menu-item index="/dashboard">
-          <el-icon><Odometer /></el-icon><span>驾驶舱管理</span>
-        </el-menu-item>
+        <el-sub-menu index="base">
+          <template #title><el-icon><Setting /></el-icon><span>基础数据</span></template>
+          <el-menu-item index="/base/customers">客户管理</el-menu-item>
+          <el-menu-item index="/base/suppliers">供应商管理</el-menu-item>
+          <el-menu-item index="/base/materials">原材料管理</el-menu-item>
+          <el-menu-item index="/base/products">产品管理</el-menu-item>
+          <el-menu-item index="/base/warehouses">仓库管理</el-menu-item>
+          <el-menu-item index="/base/employees">员工管理</el-menu-item>
+        </el-sub-menu>
         <el-sub-menu index="sales">
           <template #title><el-icon><ShoppingCart /></el-icon><span>销售管理</span></template>
           <el-menu-item index="/sales/orders">销售订单</el-menu-item>
@@ -49,6 +55,11 @@
           <el-menu-item index="/production/orders">冲压产量单</el-menu-item>
           <el-menu-item index="/production/daily">生产日报</el-menu-item>
         </el-sub-menu>
+        <el-sub-menu index="mold">
+          <template #title><el-icon><Tools /></el-icon><span>模具/工装夹具管理</span></template>
+          <el-menu-item index="/mold/list">模具台账</el-menu-item>
+          <el-menu-item index="/mold/plans">模具制造计划</el-menu-item>
+        </el-sub-menu>
         <el-sub-menu index="quality">
           <template #title><el-icon><CircleCheck /></el-icon><span>质量管理</span></template>
           <el-menu-item index="/quality/inspections">质检记录</el-menu-item>
@@ -61,20 +72,6 @@
           <template #title><el-icon><Cpu /></el-icon><span>设备管理</span></template>
           <el-menu-item index="/equipment/list">设备台账</el-menu-item>
           <el-menu-item index="/equipment/maintenance">维护记录</el-menu-item>
-        </el-sub-menu>
-        <el-sub-menu index="mold">
-          <template #title><el-icon><Tools /></el-icon><span>模具/工装夹具管理</span></template>
-          <el-menu-item index="/mold/list">模具台账</el-menu-item>
-          <el-menu-item index="/mold/plans">模具制造计划</el-menu-item>
-        </el-sub-menu>
-        <el-sub-menu index="base">
-          <template #title><el-icon><Setting /></el-icon><span>基础数据</span></template>
-          <el-menu-item index="/base/customers">客户管理</el-menu-item>
-          <el-menu-item index="/base/suppliers">供应商管理</el-menu-item>
-          <el-menu-item index="/base/materials">原材料管理</el-menu-item>
-          <el-menu-item index="/base/products">产品管理</el-menu-item>
-          <el-menu-item index="/base/warehouses">仓库管理</el-menu-item>
-          <el-menu-item index="/base/employees">员工管理</el-menu-item>
         </el-sub-menu>
         <el-sub-menu index="oa">
           <template #title><el-icon><EditPen /></el-icon><span>协同办公</span></template>
@@ -94,6 +91,9 @@
           <el-menu-item index="/hr/payroll">薪资管理</el-menu-item>
           <el-menu-item index="/hr/training">培训管理</el-menu-item>
         </el-sub-menu>
+        <el-menu-item index="/dashboard">
+          <el-icon><Odometer /></el-icon><span>驾驶舱管理</span>
+        </el-menu-item>
         <el-menu-item v-if="auth.role === 'admin'" index="/system/users">
           <el-icon><User /></el-icon><span>系统管理</span>
         </el-menu-item>

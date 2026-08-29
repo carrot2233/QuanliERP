@@ -41,7 +41,7 @@ Start backend first, then frontend. Frontend depends on backend being up.
 ## Architecture facts
 
 - **No EF migrations.** DB is created via `EnsureCreated()` + `DbSeeder.Seed()` on first startup. A `dotnet-ef` tool manifest exists (`backend/QuanliERP.Api/.config/dotnet-tools.json`, v10.0.11) but is not used — do not introduce a migrations workflow.
-- **Schema changes are destructive for dev:** `EnsureCreated()` only runs when the DB does not exist. Changing models won't update an existing `QuanliERP` DB; drop it (or change the connection string) to re-seed.
+- **Schema changes are destructive for dev:** `EnsureCreated()` only runs when the DB does not exist. Changing models won't update an existing `QuanliERP` DB. To force-reseed, set `Database:Reinitialize: true` in `appsettings.json` (Program.cs runs `EnsureDeleted` + `EnsureCreated` + `Seed`) — pick this back to `false` before committing.
 - **Generic CRUD base** (`CrudBaseController<T>`): reflection-based keyword search across string properties only. New simple entities inherit this; complex entities get their own controller.
 - **Single Axios instance** (`src/api/index.js`) handles all HTTP + JWT. API modules are in `src/api/modules.js`.
 - **All routes lazy-loaded** in `src/router/index.js`. Auth guard checks Pinia auth store.

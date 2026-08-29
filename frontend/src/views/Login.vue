@@ -71,7 +71,7 @@ async function doLogin() {
 
 <style scoped>
 .login-page { height: 100%; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #1f3b73 0%, #2d5aa0 50%, #409eff 100%); }
+  background: linear-gradient(135deg, rgba(15,34,71,.82) 0%, rgba(31,59,115,.82) 50%, rgba(45,90,160,.82) 100%), url(@/assets/login-bg.jpg) center/cover no-repeat; }
 .login-card { width: 400px; padding: 40px; background: #fff; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
 .login-title { text-align: center; margin-bottom: 28px; }
 .login-title h2 { color: #1f3b73; margin-bottom: 6px; }
