@@ -32,6 +32,9 @@ namespace QuanliERP.Api.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         [MaxLength(50)]
         public string Creator { get; set; } = ""; // 创建用户
+        public bool IsRead { get; set; } = false; // 是否已读
+        public bool IsStarred { get; set; } = false; // 是否星标
+        public bool IsPinned { get; set; } = false; // 是否置顶
     }
 
     // 流程设计
@@ -49,6 +52,8 @@ namespace QuanliERP.Api.Models
         public string Status { get; set; } = "有效"; // 有效/无效
         [MaxLength(50)]
         public string DeptName { get; set; } = ""; // 所属部门
+        [MaxLength(50)]
+        public string FormType { get; set; } = ""; // 关联表单
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public List<FlowNode> Nodes { get; set; } = new();
@@ -127,6 +132,8 @@ namespace QuanliERP.Api.Models
         public string Creator { get; set; } = "";
         [MaxLength(200)]
         public string Remark { get; set; } = ""; // 文件备注
+        [MaxLength(300)]
+        public string FilePath { get; set; } = ""; // 附件存储路径
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 }

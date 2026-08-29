@@ -36,6 +36,7 @@
       </el-table-column>
       <el-table-column label="操作" width="150" align="center" fixed="right">
         <template #default="{ row }">
+          <slot name="actions" :row="row" />
           <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
           <el-button link type="danger" size="small" @click="remove(row)">删除</el-button>
         </template>
@@ -60,6 +61,12 @@
               <el-date-picker v-else-if="f.type === 'date'" v-model="form[f.prop]" type="date" value-format="YYYY-MM-DD" style="width:100%" />
               <el-date-picker v-else-if="f.type === 'datetime'" v-model="form[f.prop]" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" style="width:100%" />
               <el-input-number v-else-if="f.type === 'number'" v-model="form[f.prop]" style="width:100%" :controls="false" />
+              <el-upload v-else-if="f.type === 'file'" :auto-upload="false" :limit="1" :on-change="(file, fl) => onFileChange(f, file, fl)" :on-remove="() => onFileRemove(f)">
+                <el-button size="small">选择附件</el-button>
+                <template #tip>
+                  <div class="el-upload__tip">支持上传单个附件</div>
+                </template>
+              </el-upload>
               <el-input v-else v-model="form[f.prop]" :placeholder="'请输入' + f.label" />
             </el-form-item>
           </el-col>
@@ -94,6 +101,7 @@ const dialogVisible = ref(false)
 const editing = ref(false)
 const query = reactive({})
 const form = reactive({})
+const fileMap = reactive({})
 const { currentPage, pageSize, pageSizes, total, displayRows, resetPage, handleSizeChange } = usePagination(rows)
 
 async function load() {
@@ -114,6 +122,7 @@ function resetQuery() {
 function openCreate() {
   editing.value = false
   Object.keys(form).forEach(k => delete form[k])
+  Object.keys(fileMap).forEach(k => delete fileMap[k])
   Object.assign(form, JSON.parse(JSON.stringify(props.defaults)))
   dialogVisible.value = true
 }
@@ -121,17 +130,42 @@ function openCreate() {
 function openEdit(row) {
   editing.value = true
   Object.keys(form).forEach(k => delete form[k])
+  Object.keys(fileMap).forEach(k => delete fileMap[k])
   Object.assign(form, JSON.parse(JSON.stringify(row)))
   dialogVisible.value = true
 }
 
+function onFileChange(field, file) {
+  fileMap[field.prop] = file.raw
+}
+
+function onFileRemove(field) {
+  delete fileMap[field.prop]
+}
+
 async function save() {
-  if (editing.value) {
-    await api.crud.update(props.path, form.id, form)
-    ElMessage.success('更新成功')
+  const hasFile = props.formFields.some(f => f.type === 'file')
+  if (hasFile) {
+    const fd = new FormData()
+    Object.keys(form).forEach(k => {
+      if (form[k] != null) fd.append(k, form[k])
+    })
+    Object.keys(fileMap).forEach(k => fd.append(k, fileMap[k]))
+    if (editing.value) {
+      await api.crud.update(props.path, form.id, fd)
+      ElMessage.success('更新成功')
+    } else {
+      await api.crud.create(props.path, fd)
+      ElMessage.success('新增成功')
+    }
   } else {
-    await api.crud.create(props.path, form)
-    ElMessage.success('新增成功')
+    if (editing.value) {
+      await api.crud.update(props.path, form.id, form)
+      ElMessage.success('更新成功')
+    } else {
+      await api.crud.create(props.path, form)
+      ElMessage.success('新增成功')
+    }
   }
   dialogVisible.value = false
   load()

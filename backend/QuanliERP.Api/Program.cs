@@ -78,8 +78,18 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     try
     {
-        db.Database.EnsureCreated();
-        DbSeeder.Seed(db);
+        var reinit = builder.Configuration.GetValue<bool>("Database:Reinitialize");
+        if (reinit)
+        {
+            db.Database.EnsureDeleted();
+            db.Database.EnsureCreated();
+            DbSeeder.Seed(db);
+        }
+        else
+        {
+            db.Database.EnsureCreated();
+            DbSeeder.Seed(db);
+        }
     }
     catch (Exception ex)
     {

@@ -143,6 +143,18 @@ export default {
   createFlowInstance: data => api.post('/FlowInstances', data),
   flowApprove: (taskId, data) => api.post(`/FlowInstances/tasks/${taskId}/approve`, data),
   deleteFlowInstance: id => api.delete(`/FlowInstances/${id}`),
+  fileRecords: params => api.get('/FileRecords', { params }),
+  createFileRecord: data => api.post('/FileRecords', data),
+  updateFileRecord: (id, data) => api.put(`/FileRecords/${id}`, data),
+  deleteFileRecord: id => api.delete(`/FileRecords/${id}`),
+  fileDownload: id => api.get(`/FileRecords/${id}/download`, { responseType: 'blob' }),
+  messages: params => api.get('/Messages', { params }),
+  unreadCount: recipient => api.get('/Messages/unread-count', { params: { recipient } }),
+  unreadMessages: (recipient, limit = 10) => api.get('/Messages/unread', { params: { recipient, limit } }),
+  messageRead: id => api.put(`/Messages/${id}/read`),
+  messageStar: id => api.put(`/Messages/${id}/star`),
+  messagePin: id => api.put(`/Messages/${id}/pin`),
+  deleteMessage: id => api.delete(`/Messages/${id}`),
 
   // 人力资源
   leaveRequests: params => api.get('/LeaveRequests', { params }),

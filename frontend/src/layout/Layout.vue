@@ -109,6 +109,25 @@
         </div>
         <div class="user">
           <el-tag v-if="auth.role" size="small" type="success" effect="plain">{{ roleName }}</el-tag>
+          <el-popover placement="bottom-end" :width="320" trigger="click" @show="loadUnread">
+            <template #reference>
+              <el-badge :value="unreadCount" :hidden="unreadCount === 0" :max="99" class="bell-badge">
+                <el-icon :size="20" class="bell-icon"><Bell /></el-icon>
+              </el-badge>
+            </template>
+            <div class="unread-panel">
+              <div class="unread-header">
+                <span>未读消息</span>
+                <el-button v-if="unreadList.length" link type="primary" size="small" @click="goMessages">查看全部</el-button>
+              </div>
+              <div v-if="unreadList.length === 0" class="unread-empty">暂无未读消息</div>
+              <div v-for="m in unreadList" :key="m.id" class="unread-item" @click="openMessage(m)">
+                <el-tag :type="typeColor(m.msgType)" size="small" class="unread-type">{{ m.msgType }}</el-tag>
+                <span class="unread-content">{{ m.content }}</span>
+                <span class="unread-time">{{ fmtTime(m.createdAt) }}</span>
+              </div>
+            </div>
+          </el-popover>
           <el-dropdown @command="handleCommand">
             <span class="user-name">
               <el-avatar :size="30" style="background:#409eff">{{ auth.displayName?.charAt(0) }}</el-avatar>
@@ -159,7 +178,8 @@ import { computed, watch, ref, reactive, nextTick, onMounted, onUpdated } from '
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useTabsStore } from '../stores/tabs'
-import { Odometer, ShoppingCart, ShoppingCartFull, Box, Calendar, SetUp, CircleCheck, Cpu, Tools, Setting, User, OfficeBuilding, ArrowDown, ArrowLeft, ArrowRight, Close, Fold, Expand, EditPen, UserFilled } from '@element-plus/icons-vue'
+import { Odometer, ShoppingCart, ShoppingCartFull, Box, Calendar, SetUp, CircleCheck, Cpu, Tools, Setting, User, OfficeBuilding, ArrowDown, ArrowLeft, ArrowRight, Close, Fold, Expand, EditPen, UserFilled, Bell } from '@element-plus/icons-vue'
+import api from '../api/modules'
 
 const routeIconMap = {
   '/dashboard': Odometer,
@@ -214,6 +234,51 @@ const tabsWrapRef = ref(null)
 const collapsed = ref(false)
 const canScrollLeft = ref(false)
 const canScrollRight = ref(false)
+const unreadCount = ref(0)
+const unreadList = ref([])
+
+async function loadUnreadCount() {
+  try {
+    const res = await api.unreadCount(auth.displayName)
+    unreadCount.value = res.count
+  } catch { /* ignore */ }
+}
+
+async function loadUnread() {
+  try {
+    unreadList.value = await api.unreadMessages(auth.displayName, 8)
+  } catch { /* ignore */ }
+}
+
+async function openMessage(m) {
+  try {
+    await api.messageRead(m.id)
+    loadUnreadCount()
+    loadUnread()
+  } catch { /* ignore */ }
+  router.push('/oa/messages')
+}
+
+function goMessages() {
+  router.push('/oa/messages')
+}
+
+function typeColor(t) {
+  return { 系统消息: 'info', 审批消息: 'success', 待办消息: 'warning' }[t] || 'primary'
+}
+
+function fmtTime(v) {
+  if (!v) return ''
+  const s = String(v).replace('T', ' ').slice(5, 16)
+  return s
+}
+
+onMounted(() => {
+  checkScroll()
+  loadUnreadCount()
+})
+
+watch(() => auth.displayName, loadUnreadCount)
 
 function updateScrollBtns() {
   const el = tabsWrapRef.value
@@ -232,7 +297,6 @@ function checkScroll() {
 }
 
 watch(() => tabs.list.length, checkScroll)
-onMounted(checkScroll)
 onUpdated(checkScroll)
 
 watch(() => route.path, () => {
@@ -307,6 +371,17 @@ function handleCommand(cmd) {
 .header { background: #fff; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 4px rgba(0,21,41,.08); height: 44px; padding: 0 16px; flex-shrink: 0; }
 .user { display: flex; align-items: center; gap: 10px; }
 .user-name { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px; }
+.bell-badge { cursor: pointer; display: flex; align-items: center; }
+.bell-icon { color: #666; }
+.bell-icon:hover { color: #409eff; }
+.unread-panel { max-height: 360px; overflow-y: auto; }
+.unread-header { display: flex; align-items: center; justify-content: space-between; font-weight: bold; margin-bottom: 8px; }
+.unread-empty { color: #999; text-align: center; padding: 16px 0; font-size: 13px; }
+.unread-item { display: flex; align-items: center; gap: 8px; padding: 8px 4px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+.unread-item:hover { background: #f5f7fa; }
+.unread-type { flex-shrink: 0; }
+.unread-content { flex: 1; min-width: 0; font-size: 13px; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.unread-time { flex-shrink: 0; font-size: 12px; color: #999; }
 .tabs-bar { background: #fff; border-bottom: 1px solid #e8e8e8; padding: 0; display: flex; align-items: center; position: relative; height: 42px; flex-shrink: 0; }
 .tabs-wrap { display: flex; gap: 6px; overflow-x: auto; padding: 0 12px; flex: 1; min-width: 0; align-items: center; }
 .tabs-wrap::-webkit-scrollbar { height: 0; }

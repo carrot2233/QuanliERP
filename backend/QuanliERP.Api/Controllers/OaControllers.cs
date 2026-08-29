@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QuanliERP.Api.Data;
@@ -9,18 +10,244 @@ namespace QuanliERP.Api.Controllers
     public class NoticesController : CrudBaseController<Notice>
     {
         public NoticesController(AppDbContext db) : base(db) { }
+
+        // 新增通知时同步生成消息中心待办消息（发给所有启用用户）
+        public override async Task<IActionResult> Create(Notice item)
+        {
+            PrepareNew(item);
+            _db.Notices.Add(item);
+            await _db.SaveChangesAsync();
+
+            var users = await _db.Users.Where(u => u.IsActive).Select(u => u.DisplayName).ToListAsync();
+            var msgContent = item.Title + (string.IsNullOrEmpty(item.Content) ? "" : "：" + item.Content);
+            if (msgContent.Length > 480) msgContent = msgContent[..480] + "...";
+            foreach (var name in users)
+            {
+                _db.Messages.Add(new Message
+                {
+                    MsgType = "系统消息",
+                    Recipient = name,
+                    Content = msgContent,
+                    Creator = string.IsNullOrEmpty(item.Creator) ? "系统管理员" : item.Creator
+                });
+            }
+            await _db.SaveChangesAsync();
+            return Ok(item);
+        }
     }
 
     [Route("api/[controller]")]
-    public class MessagesController : CrudBaseController<Message>
+    [ApiController]
+    [Authorize]
+    public class MessagesController : ControllerBase
     {
-        public MessagesController(AppDbContext db) : base(db) { }
+        private readonly AppDbContext _db;
+        public MessagesController(AppDbContext db) { _db = db; }
+
+        // 收件箱：当前用户的全部消息（按置顶/时间排序）
+        [HttpGet]
+        public async Task<IActionResult> GetAll([FromQuery] string? recipient, [FromQuery] string? keyword, [FromQuery] string? filter)
+        {
+            var q = _db.Messages.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(recipient)) q = q.Where(m => m.Recipient == recipient);
+            if (!string.IsNullOrWhiteSpace(keyword))
+                q = q.Where(m => m.Content.Contains(keyword) || m.MsgType.Contains(keyword));
+            if (filter == "starred") q = q.Where(m => m.IsStarred);
+            else if (filter == "read") q = q.Where(m => m.IsRead);
+            else if (filter == "unread") q = q.Where(m => !m.IsRead);
+            var list = await q.OrderByDescending(m => m.IsPinned).ThenByDescending(m => m.CreatedAt)
+                .Select(m => new { m.Id, m.MsgType, m.Recipient, m.Content, m.Creator, m.CreatedAt, m.IsRead, m.IsStarred, m.IsPinned })
+                .ToListAsync();
+            return Ok(list);
+        }
+
+        // 未读消息数
+        [HttpGet("unread-count")]
+        public async Task<IActionResult> GetUnreadCount([FromQuery] string recipient)
+        {
+            var count = await _db.Messages.CountAsync(m => m.Recipient == recipient && !m.IsRead);
+            return Ok(new { count });
+        }
+
+        // 未读消息列表（顶部气泡下拉用）
+        [HttpGet("unread")]
+        public async Task<IActionResult> GetUnread([FromQuery] string recipient, [FromQuery] int limit = 10)
+        {
+            var list = await _db.Messages.Where(m => m.Recipient == recipient && !m.IsRead)
+                .OrderByDescending(m => m.CreatedAt).Take(limit)
+                .Select(m => new { m.Id, m.MsgType, m.Content, m.Creator, m.CreatedAt })
+                .ToListAsync();
+            return Ok(list);
+        }
+
+        [HttpPut("{id}/read")]
+        public async Task<IActionResult> MarkRead(int id)
+        {
+            var item = await _db.Messages.FindAsync(id);
+            if (item == null) return NotFound();
+            item.IsRead = true;
+            await _db.SaveChangesAsync();
+            return Ok(new { message = "已标记为已读" });
+        }
+
+        [HttpPut("{id}/star")]
+        public async Task<IActionResult> ToggleStar(int id)
+        {
+            var item = await _db.Messages.FindAsync(id);
+            if (item == null) return NotFound();
+            item.IsStarred = !item.IsStarred;
+            await _db.SaveChangesAsync();
+            return Ok(new { message = item.IsStarred ? "已星标" : "已取消星标" });
+        }
+
+        [HttpPut("{id}/pin")]
+        public async Task<IActionResult> TogglePin(int id)
+        {
+            var item = await _db.Messages.FindAsync(id);
+            if (item == null) return NotFound();
+            item.IsPinned = !item.IsPinned;
+            await _db.SaveChangesAsync();
+            return Ok(new { message = item.IsPinned ? "已置顶" : "已取消置顶" });
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var item = await _db.Messages.FindAsync(id);
+            if (item == null) return NotFound();
+            _db.Messages.Remove(item);
+            await _db.SaveChangesAsync();
+            return Ok(new { message = "删除成功" });
+        }
     }
 
     [Route("api/[controller]")]
-    public class FileRecordsController : CrudBaseController<FileRecord>
+    [ApiController]
+    [Authorize]
+    public class FileRecordsController : ControllerBase
     {
-        public FileRecordsController(AppDbContext db) : base(db) { }
+        private readonly AppDbContext _db;
+        private readonly IWebHostEnvironment _env;
+        public FileRecordsController(AppDbContext db, IWebHostEnvironment env) { _db = db; _env = env; }
+
+        private string UploadsDir => Path.Combine(_env.ContentRootPath, "uploads");
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll([FromQuery] string? keyword)
+        {
+            var q = _db.FileRecords.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(keyword))
+                q = q.Where(f => f.FileName.Contains(keyword) || f.Category.Contains(keyword) || f.DeptName.Contains(keyword) || f.Remark.Contains(keyword));
+            var list = await q.OrderByDescending(f => f.CreatedAt).Select(f => new
+            {
+                f.Id, f.FileName, f.FileType, f.Category, f.DeptName, f.Status, f.Creator, f.Remark,
+                HasAttachment = f.FilePath != ""
+            }).ToListAsync();
+            return Ok(list);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var item = await _db.FileRecords.FindAsync(id);
+            if (item == null) return NotFound();
+            return Ok(item);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Create([FromForm] IFormFile? attachment, [FromForm] string? fileName, [FromForm] string? fileType,
+            [FromForm] string? category, [FromForm] string? deptName, [FromForm] string? status, [FromForm] string? creator, [FromForm] string? remark)
+        {
+            var item = new FileRecord
+            {
+                FileName = string.IsNullOrWhiteSpace(fileName) ? (attachment?.FileName ?? "") : fileName,
+                FileType = fileType ?? "",
+                Category = category ?? "",
+                DeptName = deptName ?? "",
+                Status = string.IsNullOrWhiteSpace(status) ? "有效" : status,
+                Creator = creator ?? "",
+                Remark = remark ?? ""
+            };
+            if (attachment != null && attachment.Length > 0)
+                item.FilePath = await SaveFile(attachment);
+            _db.FileRecords.Add(item);
+            await _db.SaveChangesAsync();
+            return Ok(item);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromForm] IFormFile? attachment, [FromForm] string? fileName, [FromForm] string? fileType,
+            [FromForm] string? category, [FromForm] string? deptName, [FromForm] string? status, [FromForm] string? creator, [FromForm] string? remark,
+            [FromForm] string? existingFilePath, [FromForm] bool? removeAttachment)
+        {
+            var item = await _db.FileRecords.FindAsync(id);
+            if (item == null) return NotFound();
+
+            item.FileName = string.IsNullOrWhiteSpace(fileName) ? item.FileName : fileName;
+            item.FileType = fileType ?? item.FileType;
+            item.Category = category ?? item.Category;
+            item.DeptName = deptName ?? item.DeptName;
+            item.Status = string.IsNullOrWhiteSpace(status) ? item.Status : status;
+            item.Creator = creator ?? item.Creator;
+            item.Remark = remark ?? item.Remark;
+
+            if (removeAttachment == true)
+                DeleteFile(item.FilePath);
+            if (attachment != null && attachment.Length > 0)
+            {
+                if (item.FilePath != "" && removeAttachment != true)
+                    DeleteFile(item.FilePath);
+                item.FilePath = await SaveFile(attachment);
+            }
+            await _db.SaveChangesAsync();
+            return Ok(item);
+        }
+
+        [HttpGet("{id}/download")]
+        public async Task<IActionResult> Download(int id)
+        {
+            var item = await _db.FileRecords.FindAsync(id);
+            if (item == null) return NotFound();
+            if (string.IsNullOrEmpty(item.FilePath))
+                return NotFound(new { message = "该记录未上传附件" });
+            var path = Path.Combine(_env.ContentRootPath, item.FilePath);
+            if (!System.IO.File.Exists(path))
+                return NotFound(new { message = "附件文件不存在" });
+            var bytes = await System.IO.File.ReadAllBytesAsync(path);
+            var ext = Path.GetExtension(item.FilePath);
+            return File(bytes, "application/octet-stream", $"{item.FileName}{ext}");
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var item = await _db.FileRecords.FindAsync(id);
+            if (item == null) return NotFound();
+            DeleteFile(item.FilePath);
+            _db.FileRecords.Remove(item);
+            await _db.SaveChangesAsync();
+            return Ok(new { message = "删除成功" });
+        }
+
+        private async Task<string> SaveFile(IFormFile file)
+        {
+            var dir = UploadsDir;
+            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+            var ext = Path.GetExtension(file.FileName);
+            var name = $"{DateTime.Now:yyyyMMddHHmmssfff}{Guid.NewGuid():N}{ext}";
+            var full = Path.Combine(dir, name);
+            using var stream = new FileStream(full, FileMode.Create);
+            await file.CopyToAsync(stream);
+            return Path.Combine("uploads", name);
+        }
+
+        private void DeleteFile(string rel)
+        {
+            if (string.IsNullOrEmpty(rel)) return;
+            var full = Path.Combine(_env.ContentRootPath, rel);
+            if (System.IO.File.Exists(full))
+                System.IO.File.Delete(full);
+        }
     }
 
     // 流程设计
@@ -36,7 +263,7 @@ namespace QuanliERP.Api.Controllers
                 q = q.Where(f => f.FlowName.Contains(keyword) || f.FlowNo.Contains(keyword) || f.Remark.Contains(keyword));
             var list = await q.OrderBy(f => f.Sort).Select(f => new
             {
-                f.Id, f.FlowNo, f.FlowName, f.Remark, f.Sort, f.Status, f.DeptName, f.CreatedAt,
+                f.Id, f.FlowNo, f.FlowName, f.Remark, f.Sort, f.Status, f.DeptName, f.FormType, f.CreatedAt,
                 NodeCount = f.Nodes.Count
             }).ToListAsync();
             return Ok(list);
@@ -47,6 +274,38 @@ namespace QuanliERP.Api.Controllers
             var f = await _db.FlowDesigns.Include(d => d.Nodes.OrderBy(n => n.Sort)).FirstOrDefaultAsync(d => d.Id == id);
             if (f == null) return NotFound();
             return Ok(f);
+        }
+
+        public override async Task<IActionResult> Create(FlowDesign item)
+        {
+            PrepareNew(item);
+            // 清除导航属性，只保留节点数据
+            var nodes = item.Nodes.Select((n, i) => new FlowNode { NodeName = n.NodeName, Approver = n.Approver, Sort = i + 1 }).ToList();
+            item.Nodes = nodes;
+            _db.FlowDesigns.Add(item);
+            await _db.SaveChangesAsync();
+            return Ok(item);
+        }
+
+        public override async Task<IActionResult> Update(int id, FlowDesign item)
+        {
+            var existing = await _db.FlowDesigns.Include(d => d.Nodes).FirstOrDefaultAsync(d => d.Id == id);
+            if (existing == null) return NotFound();
+
+            existing.FlowNo = item.FlowNo;
+            existing.FlowName = item.FlowName;
+            existing.Remark = item.Remark;
+            existing.Sort = item.Sort;
+            existing.Status = item.Status;
+            existing.DeptName = item.DeptName;
+            existing.FormType = item.FormType;
+
+            // 重建节点
+            _db.FlowNodes.RemoveRange(existing.Nodes);
+            existing.Nodes = item.Nodes.Select((n, i) => new FlowNode { NodeName = n.NodeName, Approver = n.Approver, Sort = i + 1 }).ToList();
+
+            await _db.SaveChangesAsync();
+            return Ok(new { message = "更新成功" });
         }
 
         protected override void PrepareNew(FlowDesign item)
