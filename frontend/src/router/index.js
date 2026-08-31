@@ -17,7 +17,8 @@ const routes = [
       // 仓库管理
       { path: 'warehouse/inventory', name: 'Inventory', component: () => import('../views/warehouse/Inventory.vue'), meta: { title: '库存查询' } },
       { path: 'warehouse/ledger', name: 'Ledger', component: () => import('../views/warehouse/Ledger.vue'), meta: { title: '库存流水' } },
-      { path: 'warehouse/stock', name: 'StockOps', component: () => import('../views/warehouse/StockOps.vue'), meta: { title: '出入库操作' } },
+      { path: 'warehouse/stock-in', name: 'StockIn', component: () => import('../views/warehouse/StockIn.vue'), meta: { title: '入库管理' } },
+      { path: 'warehouse/stock-out', name: 'StockOut', component: () => import('../views/warehouse/StockOut.vue'), meta: { title: '出库管理' } },
       { path: 'warehouse/warnings', name: 'Warnings', component: () => import('../views/warehouse/Warnings.vue'), meta: { title: '库存预警' } },
       // 排班管理
       { path: 'schedule/shifts', name: 'Shifts', component: () => import('../views/schedule/Shift.vue'), meta: { title: '班次设置' } },

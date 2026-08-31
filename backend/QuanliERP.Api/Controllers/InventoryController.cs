@@ -49,15 +49,98 @@ namespace QuanliERP.Api.Controllers
 
         [HttpGet("ledger")]
         public async Task<IActionResult> GetLedger([FromQuery] string? itemName, [FromQuery] string? billType,
-            [FromQuery] string? start, [FromQuery] string? end)
+            [FromQuery] string? start, [FromQuery] string? end, [FromQuery] string? direction)
         {
             var q = _db.InventoryLedgers.AsQueryable();
             if (!string.IsNullOrWhiteSpace(itemName)) q = q.Where(l => l.ItemName.Contains(itemName));
             if (!string.IsNullOrWhiteSpace(billType)) q = q.Where(l => l.BillType == billType);
             if (DateTime.TryParse(start, out var d1)) q = q.Where(l => l.OperationTime >= d1);
             if (DateTime.TryParse(end, out var d2)) q = q.Where(l => l.OperationTime <= d2);
+            if (direction == "in") q = q.Where(l => l.InQty > 0 && l.OutQty == 0);
+            if (direction == "out") q = q.Where(l => l.OutQty > 0 && l.InQty == 0);
             var list = await q.OrderByDescending(l => l.OperationTime).ToListAsync();
             return Ok(list);
+        }
+
+        // 编辑出入库记录（同步调整库存结存）
+        [HttpPut("ledger/{id:int}")]
+        public async Task<IActionResult> UpdateLedger(int id, InventoryLedger entry)
+        {
+            var old = await _db.InventoryLedgers.FindAsync(id);
+            if (old == null) return NotFound(new { message = "记录不存在" });
+            if (entry.InQty == 0 && entry.OutQty == 0)
+                return BadRequest(new { message = "出入库数量不能同时为 0" });
+
+            var inv = await _db.Inventories.FirstOrDefaultAsync(x =>
+                x.ItemType == old.ItemType && x.ItemId == old.ItemId && x.WarehouseId == old.WarehouseId);
+            if (inv == null) return NotFound(new { message = "未找到对应库存记录" });
+
+            var oldIn = old.InQty;
+            var oldOut = old.OutQty;
+            var newIn = entry.InQty;
+            var newOut = entry.OutQty;
+
+            if (old.WarehouseId != entry.WarehouseId || old.ItemType != entry.ItemType || old.ItemId != entry.ItemId)
+            {
+                var target = await _db.Inventories.FirstOrDefaultAsync(x =>
+                    x.ItemType == entry.ItemType && x.ItemId == entry.ItemId && x.WarehouseId == entry.WarehouseId);
+                if (target == null)
+                {
+                    var mat = entry.ItemType == "材料" ? await _db.Materials.FindAsync(entry.ItemId) : null;
+                    var prod = entry.ItemType == "产品" ? await _db.Products.FindAsync(entry.ItemId) : null;
+                    target = new Inventory
+                    {
+                        WarehouseId = entry.WarehouseId, ItemType = entry.ItemType, ItemId = entry.ItemId,
+                        Code = mat?.Code ?? prod?.Code ?? entry.ItemName, Name = entry.ItemName,
+                        Specification = entry.Specification, Unit = mat?.Unit ?? prod?.Unit ?? "",
+                        Qty = 0, SafeStock = 0, UpdatedAt = DateTime.Now
+                    };
+                    _db.Inventories.Add(target);
+                }
+                inv.Qty -= oldIn - oldOut;
+                if (inv.Qty < 0) inv.Qty = 0;
+                if (target.Id == 0) await _db.SaveChangesAsync();
+                inv = target;
+            }
+
+            if (newOut > inv.Qty)
+                return BadRequest(new { message = $"当前库存不足，库存为 {inv.Qty}" });
+            inv.Qty += newIn - newOut;
+            inv.UpdatedAt = DateTime.Now;
+
+            old.ItemType = entry.ItemType;
+            old.ItemId = entry.ItemId;
+            old.ItemName = entry.ItemName;
+            old.Specification = entry.Specification;
+            old.BillType = entry.BillType;
+            old.BillNo = entry.BillNo;
+            old.InQty = newIn;
+            old.OutQty = newOut;
+            old.BalanceQty = inv.Qty;
+            old.Remark = entry.Remark;
+            if (!string.IsNullOrWhiteSpace(entry.Operator)) old.Operator = entry.Operator;
+
+            await _db.SaveChangesAsync();
+            return Ok(new { message = "更新成功", BalanceQty = inv.Qty });
+        }
+
+        // 删除出入库记录（反向冲减库存结存）
+        [HttpDelete("ledger/{id:int}")]
+        public async Task<IActionResult> DeleteLedger(int id)
+        {
+            var old = await _db.InventoryLedgers.FindAsync(id);
+            if (old == null) return NotFound(new { message = "记录不存在" });
+            var inv = await _db.Inventories.FirstOrDefaultAsync(x =>
+                x.ItemType == old.ItemType && x.ItemId == old.ItemId && x.WarehouseId == old.WarehouseId);
+            if (inv != null)
+            {
+                inv.Qty -= old.InQty - old.OutQty;
+                if (inv.Qty < 0) inv.Qty = 0;
+                inv.UpdatedAt = DateTime.Now;
+            }
+            _db.InventoryLedgers.Remove(old);
+            await _db.SaveChangesAsync();
+            return Ok(new { message = "删除成功" });
         }
 
         // 通用出入库操作

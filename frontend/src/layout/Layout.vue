@@ -40,7 +40,8 @@
         <el-sub-menu index="warehouse">
           <template #title><el-icon><Box /></el-icon><span>仓库管理</span></template>
           <el-menu-item index="/warehouse/inventory">库存查询</el-menu-item>
-          <el-menu-item index="/warehouse/stock">出入库操作</el-menu-item>
+          <el-menu-item index="/warehouse/stock-in">入库管理</el-menu-item>
+          <el-menu-item index="/warehouse/stock-out">出库管理</el-menu-item>
           <el-menu-item index="/warehouse/ledger">库存流水</el-menu-item>
           <el-menu-item index="/warehouse/warnings">库存预警</el-menu-item>
         </el-sub-menu>
@@ -188,7 +189,8 @@ const routeIconMap = {
   '/purchase/orders': ShoppingCartFull,
   '/purchase/receipts': ShoppingCartFull,
   '/warehouse/inventory': Box,
-  '/warehouse/stock': Box,
+  '/warehouse/stock-in': Box,
+  '/warehouse/stock-out': Box,
   '/warehouse/ledger': Box,
   '/warehouse/warnings': Box,
   '/schedule/shifts': Calendar,

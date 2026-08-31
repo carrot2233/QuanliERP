@@ -46,6 +46,9 @@ export default {
   inventoryWarnings: () => api.get('/Inventory/warnings'),
   ledger: params => api.get('/Inventory/ledger', { params }),
   stockInOut: data => api.post('/Inventory/stock', data),
+  stockRecords: params => api.get('/Inventory/ledger', { params }),
+  updateStockRecord: (id, data) => api.put(`/Inventory/ledger/${id}`, data),
+  deleteStockRecord: id => api.delete(`/Inventory/ledger/${id}`),
   inventoryAdjust: data => api.post('/Inventory/adjust', data),
   workshopIn: data => api.post('/Inventory/workshop-in', data),
 
