@@ -14,7 +14,11 @@ namespace QuanliERP.Api.Controllers
         private readonly AppDbContext _db;
         private readonly JwtService _jwt;
         private readonly CaptchaService _captcha;
-        public AuthController(AppDbContext db, JwtService jwt, CaptchaService captcha) { _db = db; _jwt = jwt; _captcha = captcha; }
+        private readonly PermissionService _permissions;
+        public AuthController(AppDbContext db, JwtService jwt, CaptchaService captcha, PermissionService permissions)
+        {
+            _db = db; _jwt = jwt; _captcha = captcha; _permissions = permissions;
+        }
 
         [HttpGet("captcha")]
         [AllowAnonymous]
@@ -36,13 +40,27 @@ namespace QuanliERP.Api.Controllers
                 return Unauthorized(new { message = "用户名或密码错误" });
             if (!user.IsActive)
                 return Unauthorized(new { message = "账号已被禁用" });
+
+            var perms = await _permissions.GetUserPermissionsAsync(user);
             return Ok(new LoginResponse
             {
                 Token = _jwt.GenerateToken(user),
                 Username = user.Username,
                 DisplayName = user.DisplayName,
-                Role = user.Role
+                Role = user.Role,
+                Permissions = perms.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList()
             });
+        }
+
+        [HttpGet("permissions")]
+        [Authorize]
+        public async Task<IActionResult> GetPermissions()
+        {
+            var username = User.Identity?.Name;
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
+            if (user == null) return Unauthorized();
+            var perms = await _permissions.GetUserPermissionsAsync(user);
+            return Ok(new { permissions = perms.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList() });
         }
 
         [HttpGet("me")]

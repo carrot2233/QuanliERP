@@ -18,6 +18,31 @@ namespace QuanliERP.Api.Data
                 new User { Username = "sale", PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"), DisplayName = "销售专员", Role = "sales", IsActive = true });
             db.SaveChanges();
 
+            // ---------- 角色 ----------
+            db.Roles.AddRange(
+                new Role { Code = "admin", Name = "系统管理员", Description = "拥有全部菜单权限", IsBuiltIn = true },
+                new Role { Code = "production", Name = "生产", Description = "生产计划/产量单/日报/排班等", IsBuiltIn = true },
+                new Role { Code = "warehouse", Name = "仓库", Description = "库存查询/出入库/流水/预警/基础数据", IsBuiltIn = true },
+                new Role { Code = "quality", Name = "质量", Description = "质检/量具/申购/报废/检定", IsBuiltIn = true },
+                new Role { Code = "sales", Name = "销售", Description = "销售订单/发货管理", IsBuiltIn = true });
+            db.SaveChanges();
+
+            // 各内置角色默认菜单权限（仅叶子菜单权限码）
+            var defaults = new (string role, string[] codes)[]
+            {
+                ("production", new[] { "dashboard", "schedule:shift", "schedule:work", "production:plan", "production:order", "production:daily", "mold:list", "mold:plan", "equipment:list", "equipment:maintenance" }),
+                ("warehouse", new[] { "dashboard", "base:material", "base:product", "base:warehouse", "warehouse:inventory", "warehouse:stock-in", "warehouse:stock-out", "warehouse:ledger", "warehouse:warning" }),
+                ("quality", new[] { "dashboard", "quality:inspection", "quality:tool", "quality:toolapply", "quality:toolscrap", "quality:calibration" }),
+                ("sales", new[] { "dashboard", "sales:order", "sales:delivery" })
+            };
+            foreach (var (roleCode, codes) in defaults)
+            {
+                var roleId = db.Roles.First(r => r.Code == roleCode).Id;
+                foreach (var code in codes)
+                    db.RolePermissions.Add(new RolePermission { RoleId = roleId, PermissionCode = code });
+            }
+            db.SaveChanges();
+
             // ---------- 客户 ----------
             var c1 = new Customer { Code = "C001", Name = "海马汽车有限公司", Contact = "李经理", Phone = "13803910001", Address = "河南郑州", Remark = "主要冲压件客户" };
             var c2 = new Customer { Code = "C002", Name = "比亚迪零部件事业部", Contact = "王工", Phone = "13803910002", Address = "广东深圳", Remark = "汽车冲压件" };

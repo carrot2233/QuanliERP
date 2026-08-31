@@ -18,86 +18,88 @@
         class="menu"
         :collapse-transition="false"
       >
-        <el-sub-menu index="base">
+        <el-sub-menu v-if="auth.hasPerm('base:customer') || auth.hasPerm('base:supplier') || auth.hasPerm('base:material') || auth.hasPerm('base:product') || auth.hasPerm('base:warehouse') || auth.hasPerm('base:employee')" index="base">
           <template #title><el-icon><Setting /></el-icon><span>基础数据</span></template>
-          <el-menu-item index="/base/customers">客户管理</el-menu-item>
-          <el-menu-item index="/base/suppliers">供应商管理</el-menu-item>
-          <el-menu-item index="/base/materials">原材料管理</el-menu-item>
-          <el-menu-item index="/base/products">产品管理</el-menu-item>
-          <el-menu-item index="/base/warehouses">仓库管理</el-menu-item>
-          <el-menu-item index="/base/employees">员工管理</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('base:customer')" index="/base/customers">客户管理</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('base:supplier')" index="/base/suppliers">供应商管理</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('base:material')" index="/base/materials">原材料管理</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('base:product')" index="/base/products">产品管理</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('base:warehouse')" index="/base/warehouses">仓库管理</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('base:employee')" index="/base/employees">员工管理</el-menu-item>
         </el-sub-menu>
-        <el-sub-menu index="sales">
+        <el-sub-menu v-if="auth.hasPerm('sales:order') || auth.hasPerm('sales:delivery')" index="sales">
           <template #title><el-icon><ShoppingCart /></el-icon><span>销售管理</span></template>
-          <el-menu-item index="/sales/orders">销售订单</el-menu-item>
-          <el-menu-item index="/sales/deliveries">发货管理</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('sales:order')" index="/sales/orders">销售订单</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('sales:delivery')" index="/sales/deliveries">发货管理</el-menu-item>
         </el-sub-menu>
-        <el-sub-menu index="purchase">
+        <el-sub-menu v-if="auth.hasPerm('purchase:order') || auth.hasPerm('purchase:receipt')" index="purchase">
           <template #title><el-icon><ShoppingCartFull /></el-icon><span>采购管理</span></template>
-          <el-menu-item index="/purchase/orders">采购订单</el-menu-item>
-          <el-menu-item index="/purchase/receipts">到货管理</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('purchase:order')" index="/purchase/orders">采购订单</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('purchase:receipt')" index="/purchase/receipts">到货管理</el-menu-item>
         </el-sub-menu>
-        <el-sub-menu index="warehouse">
+        <el-sub-menu v-if="auth.hasPerm('warehouse:inventory') || auth.hasPerm('warehouse:stock-in') || auth.hasPerm('warehouse:stock-out') || auth.hasPerm('warehouse:ledger') || auth.hasPerm('warehouse:warning')" index="warehouse">
           <template #title><el-icon><Box /></el-icon><span>仓库管理</span></template>
-          <el-menu-item index="/warehouse/inventory">库存查询</el-menu-item>
-          <el-menu-item index="/warehouse/stock-in">入库管理</el-menu-item>
-          <el-menu-item index="/warehouse/stock-out">出库管理</el-menu-item>
-          <el-menu-item index="/warehouse/ledger">库存流水</el-menu-item>
-          <el-menu-item index="/warehouse/warnings">库存预警</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('warehouse:inventory')" index="/warehouse/inventory">库存查询</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('warehouse:stock-in')" index="/warehouse/stock-in">入库管理</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('warehouse:stock-out')" index="/warehouse/stock-out">出库管理</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('warehouse:ledger')" index="/warehouse/ledger">库存流水</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('warehouse:warning')" index="/warehouse/warnings">库存预警</el-menu-item>
         </el-sub-menu>
-        <el-sub-menu index="schedule">
+        <el-sub-menu v-if="auth.hasPerm('schedule:shift') || auth.hasPerm('schedule:work')" index="schedule">
           <template #title><el-icon><Calendar /></el-icon><span>排班管理</span></template>
-          <el-menu-item index="/schedule/shifts">班次设置</el-menu-item>
-          <el-menu-item index="/schedule/work">排班计划</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('schedule:shift')" index="/schedule/shifts">班次设置</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('schedule:work')" index="/schedule/work">排班计划</el-menu-item>
         </el-sub-menu>
-        <el-sub-menu index="production">
+        <el-sub-menu v-if="auth.hasPerm('production:plan') || auth.hasPerm('production:order') || auth.hasPerm('production:daily')" index="production">
           <template #title><el-icon><SetUp /></el-icon><span>生产管理</span></template>
-          <el-menu-item index="/production/plans">生产计划</el-menu-item>
-          <el-menu-item index="/production/orders">冲压产量单</el-menu-item>
-          <el-menu-item index="/production/daily">生产日报</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('production:plan')" index="/production/plans">生产计划</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('production:order')" index="/production/orders">冲压产量单</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('production:daily')" index="/production/daily">生产日报</el-menu-item>
         </el-sub-menu>
-        <el-sub-menu index="mold">
+        <el-sub-menu v-if="auth.hasPerm('mold:list') || auth.hasPerm('mold:plan')" index="mold">
           <template #title><el-icon><Tools /></el-icon><span>模具/工装夹具管理</span></template>
-          <el-menu-item index="/mold/list">模具台账</el-menu-item>
-          <el-menu-item index="/mold/plans">模具制造计划</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('mold:list')" index="/mold/list">模具台账</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('mold:plan')" index="/mold/plans">模具制造计划</el-menu-item>
         </el-sub-menu>
-        <el-sub-menu index="quality">
+        <el-sub-menu v-if="auth.hasPerm('quality:inspection') || auth.hasPerm('quality:tool') || auth.hasPerm('quality:toolapply') || auth.hasPerm('quality:toolscrap') || auth.hasPerm('quality:calibration')" index="quality">
           <template #title><el-icon><CircleCheck /></el-icon><span>质量管理</span></template>
-          <el-menu-item index="/quality/inspections">质检记录</el-menu-item>
-          <el-menu-item index="/quality/tools">计量器具台账</el-menu-item>
-          <el-menu-item index="/quality/toolapply">量具申购</el-menu-item>
-          <el-menu-item index="/quality/toolscrap">器具报废</el-menu-item>
-          <el-menu-item index="/quality/calibration">检定处理</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('quality:inspection')" index="/quality/inspections">质检记录</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('quality:tool')" index="/quality/tools">计量器具台账</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('quality:toolapply')" index="/quality/toolapply">量具申购</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('quality:toolscrap')" index="/quality/toolscrap">器具报废</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('quality:calibration')" index="/quality/calibration">检定处理</el-menu-item>
         </el-sub-menu>
-        <el-sub-menu index="equipment">
+        <el-sub-menu v-if="auth.hasPerm('equipment:list') || auth.hasPerm('equipment:maintenance')" index="equipment">
           <template #title><el-icon><Cpu /></el-icon><span>设备管理</span></template>
-          <el-menu-item index="/equipment/list">设备台账</el-menu-item>
-          <el-menu-item index="/equipment/maintenance">维护记录</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('equipment:list')" index="/equipment/list">设备台账</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('equipment:maintenance')" index="/equipment/maintenance">维护记录</el-menu-item>
         </el-sub-menu>
-        <el-sub-menu index="oa">
+        <el-sub-menu v-if="auth.hasPerm('oa:notice') || auth.hasPerm('oa:message') || auth.hasPerm('oa:myflow') || auth.hasPerm('oa:todo') || auth.hasPerm('oa:flowdesign') || auth.hasPerm('oa:done') || auth.hasPerm('oa:file')" index="oa">
           <template #title><el-icon><EditPen /></el-icon><span>协同办公</span></template>
-          <el-menu-item index="/oa/notices">通知公告</el-menu-item>
-          <el-menu-item index="/oa/messages">消息中心</el-menu-item>
-          <el-menu-item index="/oa/my-flow">我的流程</el-menu-item>
-          <el-menu-item index="/oa/todo">待办事项</el-menu-item>
-          <el-menu-item index="/oa/flow-design">流程设计</el-menu-item>
-          <el-menu-item index="/oa/done">已办事项</el-menu-item>
-          <el-menu-item index="/oa/files">文件管理</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('oa:notice')" index="/oa/notices">通知公告</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('oa:message')" index="/oa/messages">消息中心</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('oa:myflow')" index="/oa/my-flow">我的流程</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('oa:todo')" index="/oa/todo">待办事项</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('oa:flowdesign')" index="/oa/flow-design">流程设计</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('oa:done')" index="/oa/done">已办事项</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('oa:file')" index="/oa/files">文件管理</el-menu-item>
         </el-sub-menu>
-        <el-sub-menu index="hr">
+        <el-sub-menu v-if="auth.hasPerm('hr:employee') || auth.hasPerm('hr:attendance') || auth.hasPerm('hr:leave') || auth.hasPerm('hr:payroll') || auth.hasPerm('hr:training')" index="hr">
           <template #title><el-icon><UserFilled /></el-icon><span>人力资源管理</span></template>
-          <el-menu-item index="/hr/employees">员工档案</el-menu-item>
-          <el-menu-item index="/hr/attendance">考勤管理</el-menu-item>
-          <el-menu-item index="/hr/leave">请假管理</el-menu-item>
-          <el-menu-item index="/hr/payroll">薪资管理</el-menu-item>
-          <el-menu-item index="/hr/training">培训管理</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('hr:employee')" index="/hr/employees">员工档案</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('hr:attendance')" index="/hr/attendance">考勤管理</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('hr:leave')" index="/hr/leave">请假管理</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('hr:payroll')" index="/hr/payroll">薪资管理</el-menu-item>
+          <el-menu-item v-if="auth.hasPerm('hr:training')" index="/hr/training">培训管理</el-menu-item>
         </el-sub-menu>
-        <el-menu-item index="/dashboard">
+        <el-menu-item v-if="auth.hasPerm('dashboard')" index="/dashboard">
           <el-icon><Odometer /></el-icon><span>驾驶舱管理</span>
         </el-menu-item>
-        <el-menu-item v-if="auth.role === 'admin'" index="/system/users">
-          <el-icon><User /></el-icon><span>系统管理</span>
-        </el-menu-item>
+        <el-sub-menu v-if="auth.role === 'admin'" index="system">
+          <template #title><el-icon><User /></el-icon><span>系统管理</span></template>
+          <el-menu-item index="/system/users">用户管理</el-menu-item>
+          <el-menu-item index="/system/roles">角色权限</el-menu-item>
+        </el-sub-menu>
       </el-menu>
     </el-aside>
     <el-container>
@@ -214,6 +216,7 @@ const routeIconMap = {
   '/base/warehouses': Setting,
   '/base/employees': Setting,
   '/system/users': User,
+  '/system/roles': User,
   '/oa/notices': EditPen,
   '/oa/messages': EditPen,
   '/oa/my-flow': EditPen,

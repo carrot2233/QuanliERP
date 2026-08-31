@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using QuanliERP.Api.Authorization;
 using QuanliERP.Api.Data;
 using QuanliERP.Api.Models;
 
@@ -15,6 +16,7 @@ namespace QuanliERP.Api.Controllers
         public InventoryController(AppDbContext db) { _db = db; }
 
         [HttpGet]
+        [RequirePermission("warehouse:inventory")]
         public async Task<IActionResult> GetAll([FromQuery] string? keyword, [FromQuery] string? itemType, [FromQuery] string? warehouseId)
         {
             var q = _db.Inventories.AsQueryable();
@@ -36,6 +38,7 @@ namespace QuanliERP.Api.Controllers
         }
 
         [HttpGet("warnings")]
+        [RequirePermission("warehouse:warning")]
         public async Task<IActionResult> GetWarnings()
         {
             var list = await _db.Inventories.Where(i => i.Qty <= i.SafeStock).Select(i => new
@@ -48,6 +51,7 @@ namespace QuanliERP.Api.Controllers
         }
 
         [HttpGet("ledger")]
+        [RequirePermission("warehouse:ledger")]
         public async Task<IActionResult> GetLedger([FromQuery] string? itemName, [FromQuery] string? billType,
             [FromQuery] string? start, [FromQuery] string? end, [FromQuery] string? direction)
         {
@@ -64,6 +68,7 @@ namespace QuanliERP.Api.Controllers
 
         // 编辑出入库记录（同步调整库存结存）
         [HttpPut("ledger/{id:int}")]
+        [RequirePermission("warehouse:stock-in,warehouse:stock-out")]
         public async Task<IActionResult> UpdateLedger(int id, InventoryLedger entry)
         {
             var old = await _db.InventoryLedgers.FindAsync(id);
@@ -126,6 +131,7 @@ namespace QuanliERP.Api.Controllers
 
         // 删除出入库记录（反向冲减库存结存）
         [HttpDelete("ledger/{id:int}")]
+        [RequirePermission("warehouse:stock-in,warehouse:stock-out")]
         public async Task<IActionResult> DeleteLedger(int id)
         {
             var old = await _db.InventoryLedgers.FindAsync(id);
@@ -145,6 +151,7 @@ namespace QuanliERP.Api.Controllers
 
         // 通用出入库操作
         [HttpPost("stock")]
+        [RequirePermission("warehouse:stock-in,warehouse:stock-out")]
         public async Task<IActionResult> StockInOut(InventoryLedger entry)
         {
             if (entry.InQty == 0 && entry.OutQty == 0)
@@ -178,6 +185,7 @@ namespace QuanliERP.Api.Controllers
 
         // 盘点调整
         [HttpPost("adjust")]
+        [RequirePermission("warehouse:stock-in,warehouse:stock-out")]
         public async Task<IActionResult> Adjust(InventoryAdjustDto dto)
         {
             var inv = await _db.Inventories.FirstOrDefaultAsync(x =>
@@ -201,6 +209,7 @@ namespace QuanliERP.Api.Controllers
 
         // 车间入库（生产完工入库）
         [HttpPost("workshop-in")]
+        [RequirePermission("warehouse:stock-in")]
         public async Task<IActionResult> WorkshopIn(WorkshopInDto dto)
         {
             var prod = await _db.Products.FindAsync(dto.ProductId);

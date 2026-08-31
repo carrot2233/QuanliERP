@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using QuanliERP.Api.Authorization;
 using QuanliERP.Api.Data;
 using QuanliERP.Api.Models;
 
@@ -9,6 +10,7 @@ namespace QuanliERP.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
+    [RequirePermission("production:plan")]
     public class ProductionPlansController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -108,6 +110,7 @@ namespace QuanliERP.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
+    [RequirePermission("production:order")]
     public class ProductionOrdersController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -178,6 +181,7 @@ namespace QuanliERP.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
+    [RequirePermission("production:daily")]
     public class ProductionDailyReportsController : ControllerBase
     {
         private readonly AppDbContext _db;

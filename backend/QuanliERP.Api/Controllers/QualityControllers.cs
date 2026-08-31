@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using QuanliERP.Api.Authorization;
 using QuanliERP.Api.Data;
 using QuanliERP.Api.Models;
 
@@ -9,6 +10,7 @@ namespace QuanliERP.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
+    [RequirePermission("quality:inspection")]
     public class QualityInspectionsController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -76,6 +78,7 @@ namespace QuanliERP.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
+    [RequirePermission("quality:tool")]
     public class MeasuringToolsController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -147,6 +150,7 @@ namespace QuanliERP.Api.Controllers
     }
 
     [Route("api/[controller]")]
+    [RequirePermission("quality:toolapply")]
     public class ToolAppliesController : CrudBaseController<ToolApply>
     {
         public ToolAppliesController(AppDbContext db) : base(db) { }
@@ -158,6 +162,7 @@ namespace QuanliERP.Api.Controllers
     }
 
     [Route("api/[controller]")]
+    [RequirePermission("quality:toolscrap")]
     public class ToolScrapsController : CrudBaseController<ToolScrap>
     {
         public ToolScrapsController(AppDbContext db) : base(db) { }
@@ -169,6 +174,7 @@ namespace QuanliERP.Api.Controllers
     }
 
     [Route("api/[controller]")]
+    [RequirePermission("quality:calibration")]
     public class ToolCalibrationsController : CrudBaseController<ToolCalibration>
     {
         public ToolCalibrationsController(AppDbContext db) : base(db) { }

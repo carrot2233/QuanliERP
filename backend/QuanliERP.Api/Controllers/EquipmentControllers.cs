@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using QuanliERP.Api.Authorization;
 using QuanliERP.Api.Data;
 using QuanliERP.Api.Models;
 
@@ -9,6 +10,7 @@ namespace QuanliERP.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
+    [RequirePermission("equipment:list")]
     public class EquipmentsController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -74,6 +76,7 @@ namespace QuanliERP.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
+    [RequirePermission("equipment:maintenance")]
     public class EquipmentMaintenancesController : ControllerBase
     {
         private readonly AppDbContext _db;

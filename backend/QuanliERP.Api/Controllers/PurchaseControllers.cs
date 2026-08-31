@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using QuanliERP.Api.Authorization;
 using QuanliERP.Api.Data;
 using QuanliERP.Api.Models;
 
@@ -9,6 +10,7 @@ namespace QuanliERP.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
+    [RequirePermission("purchase:order")]
     public class PurchaseOrdersController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -131,6 +133,7 @@ namespace QuanliERP.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
+    [RequirePermission("purchase:receipt")]
     public class PurchaseReceiptsController : ControllerBase
     {
         private readonly AppDbContext _db;

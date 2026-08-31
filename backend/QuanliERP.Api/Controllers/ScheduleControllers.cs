@@ -1,12 +1,14 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using QuanliERP.Api.Authorization;
 using QuanliERP.Api.Data;
 using QuanliERP.Api.Models;
 
 namespace QuanliERP.Api.Controllers
 {
     [Route("api/[controller]")]
+    [RequirePermission("schedule:shift")]
     public class ShiftsController : CrudBaseController<Shift>
     {
         public ShiftsController(AppDbContext db) : base(db) { }
@@ -15,6 +17,7 @@ namespace QuanliERP.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
+    [RequirePermission("schedule:work")]
     public class WorkSchedulesController : ControllerBase
     {
         private readonly AppDbContext _db;

@@ -19,6 +19,7 @@ builder.Services.AddEndpointsApiExplorer();
 var conn = builder.Configuration.GetConnectionString("Default") ?? "Server=.;Database=QuanliERP;Trusted_Connection=True;TrustServerCertificate=True;Encrypt=False";
 builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlServer(conn));
 builder.Services.AddScoped<JwtService>();
+builder.Services.AddScoped<PermissionService>();
 builder.Services.AddSingleton<CaptchaService>();
 
 builder.Services.AddCors(opt =>

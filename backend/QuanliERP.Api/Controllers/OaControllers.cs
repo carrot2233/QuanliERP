@@ -1,12 +1,14 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using QuanliERP.Api.Authorization;
 using QuanliERP.Api.Data;
 using QuanliERP.Api.Models;
 
 namespace QuanliERP.Api.Controllers
 {
     [Route("api/[controller]")]
+    [RequirePermission("oa:notice")]
     public class NoticesController : CrudBaseController<Notice>
     {
         public NoticesController(AppDbContext db) : base(db) { }
@@ -46,6 +48,7 @@ namespace QuanliERP.Api.Controllers
 
         // 收件箱：当前用户的全部消息（按置顶/时间排序）
         [HttpGet]
+        [RequirePermission("oa:message")]
         public async Task<IActionResult> GetAll([FromQuery] string? recipient, [FromQuery] string? keyword, [FromQuery] string? filter)
         {
             var q = _db.Messages.AsQueryable();
@@ -91,6 +94,7 @@ namespace QuanliERP.Api.Controllers
         }
 
         [HttpPut("{id}/star")]
+        [RequirePermission("oa:message")]
         public async Task<IActionResult> ToggleStar(int id)
         {
             var item = await _db.Messages.FindAsync(id);
@@ -101,6 +105,7 @@ namespace QuanliERP.Api.Controllers
         }
 
         [HttpPut("{id}/pin")]
+        [RequirePermission("oa:message")]
         public async Task<IActionResult> TogglePin(int id)
         {
             var item = await _db.Messages.FindAsync(id);
@@ -111,6 +116,7 @@ namespace QuanliERP.Api.Controllers
         }
 
         [HttpDelete("{id}")]
+        [RequirePermission("oa:message")]
         public async Task<IActionResult> Delete(int id)
         {
             var item = await _db.Messages.FindAsync(id);
@@ -124,6 +130,7 @@ namespace QuanliERP.Api.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
+    [RequirePermission("oa:file")]
     public class FileRecordsController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -252,6 +259,7 @@ namespace QuanliERP.Api.Controllers
 
     // 流程设计
     [Route("api/[controller]")]
+    [RequirePermission("oa:flowdesign")]
     public class FlowDesignsController : CrudBaseController<FlowDesign>
     {
         public FlowDesignsController(AppDbContext db) : base(db) { }
@@ -317,6 +325,7 @@ namespace QuanliERP.Api.Controllers
 
     // 流程实例（我的流程/待办/已办）
     [Route("api/[controller]")]
+    [RequirePermission("oa:myflow,oa:todo,oa:done")]
     public class FlowInstancesController : ControllerBase
     {
         private readonly AppDbContext _db;

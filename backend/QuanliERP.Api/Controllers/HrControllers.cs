@@ -1,17 +1,20 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using QuanliERP.Api.Authorization;
 using QuanliERP.Api.Data;
 using QuanliERP.Api.Models;
 
 namespace QuanliERP.Api.Controllers
 {
     [Route("api/[controller]")]
+    [RequirePermission("hr:attendance")]
     public class AttendancesController : CrudBaseController<Attendance>
     {
         public AttendancesController(AppDbContext db) : base(db) { }
     }
 
     [Route("api/[controller]")]
+    [RequirePermission("hr:leave")]
     public class LeaveRequestsController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -141,6 +144,7 @@ namespace QuanliERP.Api.Controllers
     }
 
     [Route("api/[controller]")]
+    [RequirePermission("hr:payroll")]
     public class PayrollsController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -210,6 +214,7 @@ namespace QuanliERP.Api.Controllers
     }
 
     [Route("api/[controller]")]
+    [RequirePermission("hr:training")]
     public class TrainingsController : ControllerBase
     {
         private readonly AppDbContext _db;

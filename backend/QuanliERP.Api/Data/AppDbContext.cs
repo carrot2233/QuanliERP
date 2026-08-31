@@ -28,6 +28,9 @@ namespace QuanliERP.Api.Data
         public DbSet<Inventory> Inventories => Set<Inventory>();
         public DbSet<InventoryLedger> InventoryLedgers => Set<InventoryLedger>();
 
+        public DbSet<Role> Roles => Set<Role>();
+        public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+
         public DbSet<ProductionPlan> ProductionPlans => Set<ProductionPlan>();
         public DbSet<ProductionOrder> ProductionOrders => Set<ProductionOrder>();
         public DbSet<ProductionDailyReport> ProductionDailyReports => Set<ProductionDailyReport>();
@@ -135,6 +138,12 @@ namespace QuanliERP.Api.Data
             modelBuilder.Entity<Inventory>()
                 .HasOne(i => i.Warehouse).WithMany()
                 .HasForeignKey(i => i.WarehouseId).OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<RolePermission>()
+                .HasOne(rp => rp.Role).WithMany()
+                .HasForeignKey(rp => rp.RoleId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<RolePermission>()
+                .HasIndex(rp => new { rp.RoleId, rp.PermissionCode }).IsUnique();
 
             modelBuilder.Entity<ProductionPlan>()
                 .HasOne(p => p.Customer).WithMany()

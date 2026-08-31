@@ -5,6 +5,15 @@ export default {
   login: data => api.post('/Auth/login', data),
   captcha: () => api.get('/Auth/captcha'),
   me: () => api.get('/Auth/me'),
+  myPermissions: () => api.get('/Auth/permissions'),
+
+  // 角色权限
+  roles: () => api.get('/Roles'),
+  createRole: data => api.post('/Roles', data),
+  updateRole: (id, data) => api.put(`/Roles/${id}`, data),
+  deleteRole: id => api.delete(`/Roles/${id}`),
+  roleMenus: () => api.get('/Roles/menus'),
+  setRolePermissions: (id, permissions) => api.put(`/Roles/${id}/permissions`, { permissions }),
 
   // 基础数据
   customers: () => api.get('/Customers'),

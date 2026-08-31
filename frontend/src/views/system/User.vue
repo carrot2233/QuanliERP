@@ -89,12 +89,12 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue'
+import { computed, reactive, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '../../api/modules'
 
-const roleName = { admin: '系统管理员', production: '生产', warehouse: '仓库', quality: '质量', sales: '销售' }
 const roleTag = { admin: 'danger', production: 'warning', warehouse: 'primary', quality: 'success', sales: 'info' }
+const roles = ref([])
 
 const rows = ref([])
 import { usePagination } from '../../composables/usePagination'
@@ -106,9 +106,16 @@ const dialogVisible = ref(false)
 const editing = ref(false)
 const form = reactive({})
 
+const roleName = computed(() => {
+  const map = {}
+  roles.value.forEach(r => { map[r.code] = r.name })
+  return map
+})
+
 async function load() {
   loading.value = true
   try { rows.value = await api.users({ keyword: query.keyword }) } finally { loading.value = false }
+  try { roles.value = await api.roles() } catch { /* ignore */ }
 }
 
 function openCreate() {
