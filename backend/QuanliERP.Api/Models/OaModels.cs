@@ -54,6 +54,8 @@ namespace QuanliERP.Api.Models
         public string DeptName { get; set; } = ""; // 所属部门
         [MaxLength(50)]
         public string FormType { get; set; } = ""; // 关联表单
+        [MaxLength(4000)]
+        public string FormFields { get; set; } = ""; // 表单字段定义(JSON数组)
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public List<FlowNode> Nodes { get; set; } = new();
@@ -86,6 +88,8 @@ namespace QuanliERP.Api.Models
         public string CurrentNode { get; set; } = ""; // 当前节点名称
         [MaxLength(200)]
         public string Remark { get; set; } = ""; // 实例备注
+        [MaxLength(4000)]
+        public string FormData { get; set; } = ""; // 申请表单数据(JSON对象)
         public int FlowDesignId { get; set; }
         public FlowDesign? FlowDesign { get; set; }
         [MaxLength(50)]

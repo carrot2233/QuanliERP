@@ -41,16 +41,20 @@
     </el-table>
 
     <!-- 发起流程对话框 -->
-    <el-dialog v-model="applyVisible" title="发起流程" width="560px" destroy-on-close>
+    <el-dialog v-model="applyVisible" :title="selectedDesign && selectedDesign.formType ? '发起流程 - ' + selectedDesign.formType : '发起流程'" width="560px" destroy-on-close>
       <el-form :model="applyForm" label-width="100px">
         <el-form-item label="流程定义" required>
-          <el-select v-model="applyForm.flowDesignId" placeholder="请选择流程" style="width:100%">
-            <el-option v-for="d in flowDesigns" :key="d.id" :label="d.flowName" :value="d.id" />
+          <el-select v-model="applyForm.flowDesignId" placeholder="请选择流程" style="width:100%" @change="onSelectDesign">
+            <el-option v-for="d in flowDesigns" :key="d.id" :label="d.flowName + (d.formType ? '（' + d.formType + '）' : '')" :value="d.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="实例名称">
           <el-input v-model="applyForm.instanceName" placeholder="留空则自动生成" />
         </el-form-item>
+        <template v-if="selectedDesign && selectedDesign.formType && applyFields.length">
+          <el-divider content-position="left">{{ selectedDesign.formType }}</el-divider>
+          <FlowFormFields mode="fill" v-model="applyForm.formData" :fields="applyFields" />
+        </template>
         <el-form-item label="备注">
           <el-input v-model="applyForm.remark" type="textarea" :rows="3" placeholder="请输入备注" />
         </el-form-item>
@@ -74,6 +78,15 @@
         <el-descriptions-item label="创建时间">{{ fmtDateTime(detail.createdAt) }}</el-descriptions-item>
         <el-descriptions-item label="备注" :span="2">{{ detail.remark || '-' }}</el-descriptions-item>
       </el-descriptions>
+
+      <template v-if="detail.formData && Object.keys(detail.formData).length">
+        <el-divider content-position="left">申请表单</el-divider>
+        <el-descriptions :column="1" border size="small" style="margin-bottom:8px">
+          <el-descriptions-item v-for="f in detailFields" :key="f.key" :label="f.label">
+            {{ formatValue(detail.formData[f.key]) }}
+          </el-descriptions-item>
+        </el-descriptions>
+      </template>
 
       <div style="font-weight:bold;margin-bottom:8px">审批记录</div>
       <el-table :data="detail.tasks || []" border size="small">
@@ -99,6 +112,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '../../api/modules'
 import { useAuthStore } from '../../stores/auth'
+import FlowFormFields from '../../components/FlowFormFields.vue'
 
 const auth = useAuthStore()
 const rows = ref([])
@@ -106,10 +120,13 @@ const loading = ref(false)
 const query = reactive({ keyword: '' })
 const flowDesigns = ref([])
 const applyVisible = ref(false)
-const applyForm = reactive({ flowDesignId: null, instanceName: '', remark: '' })
+const applyForm = reactive({ flowDesignId: null, instanceName: '', remark: '', formData: {} })
+const selectedDesign = ref(null)
+const applyFields = ref([])
 const submitting = ref(false)
 const detailVisible = ref(false)
 const detail = ref({})
+const detailFields = ref([])
 
 async function load() {
   loading.value = true
@@ -125,10 +142,29 @@ function resetQuery() {
   load()
 }
 
+function parseFields(str) {
+  if (!str) return []
+  try { return JSON.parse(str) } catch { return [] }
+}
+
+function parseFormData(str) {
+  if (!str) return {}
+  try { return typeof str === 'string' ? JSON.parse(str) : str } catch { return {} }
+}
+
+function onSelectDesign(id) {
+  selectedDesign.value = flowDesigns.value.find(d => d.id === id) || null
+  applyFields.value = selectedDesign.value ? parseFields(selectedDesign.value.formFields) : []
+  applyForm.formData = {}
+}
+
 async function openApply() {
   applyForm.flowDesignId = null
   applyForm.instanceName = ''
   applyForm.remark = ''
+  applyForm.formData = {}
+  selectedDesign.value = null
+  applyFields.value = []
   if (flowDesigns.value.length === 0) {
     flowDesigns.value = await api.flowDesigns()
   }
@@ -137,9 +173,22 @@ async function openApply() {
 
 async function submitApply() {
   if (!applyForm.flowDesignId) { ElMessage.warning('请选择流程'); return }
+  // 校验必填字段
+  for (const f of applyFields.value) {
+    if (f.required && !applyForm.formData[f.key]) {
+      ElMessage.warning(`请填写：${f.label}`)
+      return
+    }
+  }
   submitting.value = true
   try {
-    await api.createFlowInstance({ ...applyForm, creator: auth.displayName })
+    await api.createFlowInstance({
+      flowDesignId: applyForm.flowDesignId,
+      instanceName: applyForm.instanceName,
+      remark: applyForm.remark,
+      formData: applyFields.value.length ? JSON.stringify(applyForm.formData) : '',
+      creator: auth.displayName
+    })
     ElMessage.success('流程已发起')
     applyVisible.value = false
     load()
@@ -150,7 +199,15 @@ async function submitApply() {
 
 async function viewDetail(row) {
   detail.value = await api.flowInstance(row.id)
+  const fd = detail.value.flowDesign || {}
+  detailFields.value = parseFields(fd.formFields)
+  detail.value.formData = parseFormData(detail.value.formData)
   detailVisible.value = true
+}
+
+function formatValue(v) {
+  if (v == null || v === '') return '-'
+  return v
 }
 
 async function remove(row) {

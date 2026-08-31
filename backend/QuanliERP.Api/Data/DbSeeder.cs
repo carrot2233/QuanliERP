@@ -302,12 +302,22 @@ namespace QuanliERP.Api.Data
                 new Message { MsgType = "系统消息", Recipient = "系统管理员", Content = "【示例】采购询价单XJ202608001等待审核", Creator = "系统管理员" });
 
             // ---------- 流程设计 ----------
-            var fd1 = new FlowDesign { FlowNo = "LC001", FlowName = "请假流程", Remark = "员工请假审批流程", Sort = 1, Status = "有效", DeptName = "行政部" };
+            var fd1 = new FlowDesign
+            {
+                FlowNo = "LC001", FlowName = "请假流程", Remark = "员工请假审批流程", Sort = 1, Status = "有效", DeptName = "行政部",
+                FormType = "请假申请单",
+                FormFields = "[{\"key\":\"leaveType\",\"label\":\"请假类型\",\"type\":\"select\",\"required\":true,\"options\":[\"事假\",\"病假\",\"年假\",\"婚假\",\"产假\"]},{\"key\":\"startDate\",\"label\":\"开始日期\",\"type\":\"date\",\"required\":true},{\"key\":\"endDate\",\"label\":\"结束日期\",\"type\":\"date\",\"required\":true},{\"key\":\"days\",\"label\":\"请假天数\",\"type\":\"number\",\"required\":true},{\"key\":\"reason\",\"label\":\"请假事由\",\"type\":\"textarea\",\"required\":true}]"
+            };
             fd1.Nodes.Add(new FlowNode { NodeName = "部门主管审批", Approver = "系统管理员", Sort = 1 });
             fd1.Nodes.Add(new FlowNode { NodeName = "人事经理审批", Approver = "系统管理员", Sort = 2 });
             fd1.Nodes.Add(new FlowNode { NodeName = "总经理审批", Approver = "系统管理员", Sort = 3 });
 
-            var fd2 = new FlowDesign { FlowNo = "1787845972542", FlowName = "加班申请", Remark = "员工加班审批流程", Sort = 2, Status = "有效", DeptName = "生产部" };
+            var fd2 = new FlowDesign
+            {
+                FlowNo = "1787845972542", FlowName = "加班申请", Remark = "员工加班审批流程", Sort = 2, Status = "有效", DeptName = "生产部",
+                FormType = "加班申请单",
+                FormFields = "[{\"key\":\"date\",\"label\":\"加班日期\",\"type\":\"date\",\"required\":true},{\"key\":\"startTime\",\"label\":\"开始时间\",\"type\":\"time\",\"required\":true},{\"key\":\"endTime\",\"label\":\"结束时间\",\"type\":\"time\",\"required\":true},{\"key\":\"hours\",\"label\":\"加班小时\",\"type\":\"number\",\"required\":true},{\"key\":\"reason\",\"label\":\"加班原因\",\"type\":\"textarea\",\"required\":true}]"
+            };
             fd2.Nodes.Add(new FlowNode { NodeName = "部门主管审批", Approver = "系统管理员", Sort = 1 });
             fd2.Nodes.Add(new FlowNode { NodeName = "生产经理审批", Approver = "系统管理员", Sort = 2 });
             db.FlowDesigns.AddRange(fd1, fd2);

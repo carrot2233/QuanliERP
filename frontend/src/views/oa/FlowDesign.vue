@@ -78,7 +78,7 @@
       <div v-show="currentStep === 1">
         <el-form label-width="100px">
           <el-form-item label="关联表单">
-            <el-select v-model="form.formType" placeholder="请选择关联表单" style="width:100%">
+            <el-select v-model="form.formType" placeholder="请选择关联表单" style="width:100%" @change="onFormTypeChange">
               <el-option label="通用流程（无表单）" value="" />
               <el-option label="请假申请单" value="请假申请单" />
               <el-option label="加班申请单" value="加班申请单" />
@@ -87,9 +87,16 @@
               <el-option label="报销申请单" value="报销申请单" />
             </el-select>
           </el-form-item>
-          <el-form-item label="说明">
+          <el-form-item v-if="form.formType" label="表单模板">
+            <div style="width:100%">
+              <div style="color:#333;font-weight:bold;margin-bottom:8px">{{ form.formType }} — 字段模板</div>
+              <FlowFormFields ref="fieldsEditorRef" mode="edit" :fields="formFields" />
+            </div>
+          </el-form-item>
+          <el-form-item v-else label="说明">
             <div style="color:#999;font-size:13px;line-height:1.6">
-              选择关联表单后，发起流程时将使用对应的表单模板。<br>
+              选择关联表单后，可配置申请时需填写的字段模板；<br>
+              发起流程时将显示对应表单让申请人填写。<br>
               通用流程适用于无固定格式的审批事项。
             </div>
           </el-form-item>
@@ -109,9 +116,11 @@
               <el-input v-model="row.nodeName" placeholder="如：部门主管审批" size="small" />
             </template>
           </el-table-column>
-          <el-table-column label="审批人" min-width="130">
+          <el-table-column label="审批人" min-width="160">
             <template #default="{ row }">
-              <el-input v-model="row.approver" placeholder="审批人姓名" size="small" />
+              <el-select v-model="row.approver" filterable allow-create default-first-option placeholder="选择系统用户或输入姓名" size="small" style="width:100%">
+                <el-option v-for="u in userOptions" :key="u.username" :label="u.displayName + '（' + u.username + '）'" :value="u.displayName" />
+              </el-select>
             </template>
           </el-table-column>
           <el-table-column label="顺序" width="80" align="center">
@@ -150,6 +159,11 @@
         <el-descriptions-item label="所属部门">{{ preview.deptName || '-' }}</el-descriptions-item>
         <el-descriptions-item label="备注" :span="2">{{ preview.remark || '-' }}</el-descriptions-item>
       </el-descriptions>
+      <template v-if="preview.formType">
+        <div style="font-weight:bold;margin-bottom:8px">关联表单：{{ preview.formType }}</div>
+        <el-tag v-for="(f, i) in previewFields" :key="i" size="small" style="margin:0 6px 6px 0">{{ f.label }}<span v-if="f.required" style="color:#f56c6c">*</span></el-tag>
+        <div style="clear:both;height:8px"></div>
+      </template>
       <div style="font-weight:bold;margin-bottom:8px">审批节点</div>
       <el-steps direction="vertical" :active="(preview.nodes || []).length" style="padding-left:20px">
         <el-step v-for="(node, i) in preview.nodes || []" :key="i" :title="node.nodeName" :description="'审批人：' + node.approver" />
@@ -162,6 +176,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '../../api/modules'
+import FlowFormFields from '../../components/FlowFormFields.vue'
 
 const rows = ref([])
 const loading = ref(false)
@@ -171,11 +186,67 @@ const previewVisible = ref(false)
 const editing = ref(false)
 const currentStep = ref(0)
 const saving = ref(false)
+const fieldsEditorRef = ref(null)
+const formFields = ref([])
+const userOptions = ref([])
 const form = reactive({
   id: 0, flowNo: '', flowName: '', sort: 1, statusChecked: true,
   deptName: '', remark: '', formType: '', nodes: []
 })
 const preview = ref({})
+const previewFields = ref([])
+
+// 各表单类型的默认字段模板
+const formTemplates = {
+  '请假申请单': [
+    { key: 'leaveType', label: '请假类型', type: 'select', required: true, options: ['事假', '病假', '年假', '婚假', '产假'] },
+    { key: 'startDate', label: '开始日期', type: 'date', required: true },
+    { key: 'endDate', label: '结束日期', type: 'date', required: true },
+    { key: 'days', label: '请假天数', type: 'number', required: true },
+    { key: 'reason', label: '请假事由', type: 'textarea', required: true }
+  ],
+  '加班申请单': [
+    { key: 'date', label: '加班日期', type: 'date', required: true },
+    { key: 'startTime', label: '开始时间', type: 'time', required: true },
+    { key: 'endTime', label: '结束时间', type: 'time', required: true },
+    { key: 'hours', label: '加班小时', type: 'number', required: true },
+    { key: 'reason', label: '加班原因', type: 'textarea', required: true }
+  ],
+  '采购申请单': [
+    { key: 'itemName', label: '采购物品', type: 'text', required: true },
+    { key: 'spec', label: '规格型号', type: 'text' },
+    { key: 'qty', label: '数量', type: 'number', required: true },
+    { key: 'unit', label: '单位', type: 'text' },
+    { key: 'supplier', label: '建议供应商', type: 'text' },
+    { key: 'reason', label: '采购原因', type: 'textarea', required: true }
+  ],
+  '付款申请单': [
+    { key: 'payee', label: '收款方', type: 'text', required: true },
+    { key: 'amount', label: '付款金额', type: 'number', required: true },
+    { key: 'bankAccount', label: '收款账号', type: 'text' },
+    { key: 'purpose', label: '付款事由', type: 'textarea', required: true }
+  ],
+  '报销申请单': [
+    { key: 'amount', label: '报销金额', type: 'number', required: true },
+    { key: 'category', label: '费用类型', type: 'select', required: true, options: ['交通费', '餐饮费', '办公用品', '差旅费', '其他'] },
+    { key: 'date', label: '发生日期', type: 'date' },
+    { key: 'reason', label: '报销说明', type: 'textarea', required: true }
+  ]
+}
+
+function parseFields(str) {
+  if (!str) return []
+  try { return JSON.parse(str) } catch { return [] }
+}
+
+function onFormTypeChange(val) {
+  if (!val) { formFields.value = []; return }
+  // 切换表单类型时，仅当没有字段才加载默认模板（避免覆盖已保存/已编辑的字段）
+  if (formFields.value.length === 0) {
+    const tpl = formTemplates[val]
+    if (tpl) formFields.value = JSON.parse(JSON.stringify(tpl))
+  }
+}
 
 async function load() {
   loading.value = true
@@ -194,6 +265,7 @@ function resetQuery() {
 function openWizard() {
   editing.value = false
   currentStep.value = 0
+  formFields.value = []
   Object.assign(form, {
     id: 0, flowNo: '', flowName: '', sort: 1, statusChecked: true,
     deptName: '', remark: '', formType: '',
@@ -206,6 +278,7 @@ async function editFlow(row) {
   editing.value = true
   currentStep.value = 0
   const detail = await api.crud.list(`/FlowDesigns/${row.id}`)
+  formFields.value = parseFields(detail.formFields)
   Object.assign(form, {
     id: detail.id,
     flowNo: detail.flowNo,
@@ -244,6 +317,14 @@ async function save() {
     ElMessage.warning('请完善所有节点的名称和审批人')
     return
   }
+  // 若选择了表单但无字段，提示
+  if (form.formType && fieldsEditorRef.value) {
+    const fields = fieldsEditorRef.value.collectFields()
+    if (fields.length === 0) { ElMessage.warning('请至少为表单添加一个字段'); return }
+    formFields.value = fields
+  } else {
+    formFields.value = []
+  }
   saving.value = true
   try {
     const payload = {
@@ -255,6 +336,7 @@ async function save() {
       deptName: form.deptName,
       remark: form.remark,
       formType: form.formType,
+      formFields: form.formType ? JSON.stringify(formFields.value) : '',
       nodes: form.nodes.map((n, i) => ({ nodeName: n.nodeName, approver: n.approver, sort: i + 1 }))
     }
     if (editing.value) {
@@ -273,6 +355,7 @@ async function save() {
 
 async function viewFlow(row) {
   preview.value = await api.crud.list(`/FlowDesigns/${row.id}`)
+  previewFields.value = parseFields(preview.value.formFields)
   previewVisible.value = true
 }
 
@@ -285,7 +368,10 @@ async function remove(row) {
 
 function fmtDateTime(v) { return v ? String(v).replace('T', ' ').slice(0, 19) : '-' }
 
-onMounted(load)
+onMounted(async () => {
+  load()
+  try { userOptions.value = await api.userOptions() } catch { /* ignore */ }
+})
 </script>
 
 <style scoped>

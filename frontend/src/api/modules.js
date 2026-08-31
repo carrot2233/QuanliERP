@@ -6,6 +6,7 @@ export default {
   captcha: () => api.get('/Auth/captcha'),
   me: () => api.get('/Auth/me'),
   myPermissions: () => api.get('/Auth/permissions'),
+  userOptions: () => api.get('/Auth/user-options'),
 
   // 角色权限
   roles: () => api.get('/Roles'),

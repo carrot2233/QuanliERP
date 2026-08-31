@@ -257,9 +257,9 @@ namespace QuanliERP.Api.Controllers
         }
     }
 
-    // 流程设计
+    // 流程设计：读取（列表/详情）供发起流程使用，写操作仅限流程设计权限
     [Route("api/[controller]")]
-    [RequirePermission("oa:flowdesign")]
+    [RequirePermission("oa:flowdesign,oa:myflow,oa:todo,oa:done")]
     public class FlowDesignsController : CrudBaseController<FlowDesign>
     {
         public FlowDesignsController(AppDbContext db) : base(db) { }
@@ -271,12 +271,13 @@ namespace QuanliERP.Api.Controllers
                 q = q.Where(f => f.FlowName.Contains(keyword) || f.FlowNo.Contains(keyword) || f.Remark.Contains(keyword));
             var list = await q.OrderBy(f => f.Sort).Select(f => new
             {
-                f.Id, f.FlowNo, f.FlowName, f.Remark, f.Sort, f.Status, f.DeptName, f.FormType, f.CreatedAt,
+                f.Id, f.FlowNo, f.FlowName, f.Remark, f.Sort, f.Status, f.DeptName, f.FormType, f.FormFields, f.CreatedAt,
                 NodeCount = f.Nodes.Count
             }).ToListAsync();
             return Ok(list);
         }
 
+        [RequirePermission("oa:flowdesign")]
         public override async Task<IActionResult> GetById(int id)
         {
             var f = await _db.FlowDesigns.Include(d => d.Nodes.OrderBy(n => n.Sort)).FirstOrDefaultAsync(d => d.Id == id);
@@ -284,6 +285,7 @@ namespace QuanliERP.Api.Controllers
             return Ok(f);
         }
 
+        [RequirePermission("oa:flowdesign")]
         public override async Task<IActionResult> Create(FlowDesign item)
         {
             PrepareNew(item);
@@ -295,6 +297,7 @@ namespace QuanliERP.Api.Controllers
             return Ok(item);
         }
 
+        [RequirePermission("oa:flowdesign")]
         public override async Task<IActionResult> Update(int id, FlowDesign item)
         {
             var existing = await _db.FlowDesigns.Include(d => d.Nodes).FirstOrDefaultAsync(d => d.Id == id);
@@ -307,6 +310,7 @@ namespace QuanliERP.Api.Controllers
             existing.Status = item.Status;
             existing.DeptName = item.DeptName;
             existing.FormType = item.FormType;
+            existing.FormFields = item.FormFields;
 
             // 重建节点
             _db.FlowNodes.RemoveRange(existing.Nodes);
@@ -314,6 +318,16 @@ namespace QuanliERP.Api.Controllers
 
             await _db.SaveChangesAsync();
             return Ok(new { message = "更新成功" });
+        }
+
+        [RequirePermission("oa:flowdesign")]
+        public override async Task<IActionResult> Delete(int id)
+        {
+            var item = await _db.FlowDesigns.FindAsync(id);
+            if (item == null) return NotFound();
+            _db.FlowDesigns.Remove(item);
+            await _db.SaveChangesAsync();
+            return Ok(new { message = "删除成功" });
         }
 
         protected override void PrepareNew(FlowDesign item)
@@ -342,7 +356,7 @@ namespace QuanliERP.Api.Controllers
             var list = await q.OrderByDescending(f => f.CreatedAt).Select(f => new
             {
                 f.Id, f.InstanceNo, f.InstanceName, f.FlowStatus, f.CurrentNode, f.Remark,
-                f.Creator, f.CreatedAt, f.FinishedAt, f.FlowDesignId
+                f.FormData, f.Creator, f.CreatedAt, f.FinishedAt, f.FlowDesignId
             }).ToListAsync();
             return Ok(list);
         }
@@ -410,6 +424,7 @@ namespace QuanliERP.Api.Controllers
                 FlowStatus = "审批中",
                 CurrentNode = design.Nodes[0].NodeName,
                 Remark = dto.Remark ?? "",
+                FormData = dto.FormData ?? "",
                 FlowDesignId = design.Id,
                 Creator = dto.Creator ?? "系统管理员"
             };
@@ -527,6 +542,7 @@ namespace QuanliERP.Api.Controllers
         public int FlowDesignId { get; set; }
         public string? InstanceName { get; set; }
         public string? Remark { get; set; }
+        public string? FormData { get; set; }
         public string? Creator { get; set; }
     }
 

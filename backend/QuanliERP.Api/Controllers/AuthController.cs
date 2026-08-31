@@ -63,6 +63,18 @@ namespace QuanliERP.Api.Controllers
             return Ok(new { permissions = perms.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList() });
         }
 
+        // 系统用户选项（供流程审批人、消息接收人选择），登录用户即可访问
+        [HttpGet("user-options")]
+        [Authorize]
+        public async Task<IActionResult> GetUserOptions()
+        {
+            var list = await _db.Users.Where(u => u.IsActive)
+                .OrderBy(u => u.DisplayName)
+                .Select(u => new { u.Id, u.Username, u.DisplayName, u.Role })
+                .ToListAsync();
+            return Ok(list);
+        }
+
         [HttpGet("me")]
         [Authorize]
         public IActionResult Me()

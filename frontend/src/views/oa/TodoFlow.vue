@@ -36,7 +36,15 @@
     <div v-if="rows.length === 0 && !loading" style="text-align:center;color:#999;padding:40px 0">无数据</div>
 
     <!-- 审批对话框 -->
-    <el-dialog v-model="approveVisible" :title="approveForm.approved ? '同意审批' : '拒绝审批'" width="480px" destroy-on-close>
+    <el-dialog v-model="approveVisible" :title="approveForm.approved ? '同意审批' : '拒绝审批'" width="520px" destroy-on-close>
+      <template v-if="instanceFormData && Object.keys(instanceFormData).length">
+        <el-divider content-position="left">申请表单</el-divider>
+        <el-descriptions :column="1" border size="small" style="margin-bottom:12px">
+          <el-descriptions-item v-for="f in instanceFields" :key="f.key" :label="f.label">
+            {{ formatValue(instanceFormData[f.key]) }}
+          </el-descriptions-item>
+        </el-descriptions>
+      </template>
       <el-form :model="approveForm" label-width="80px">
         <el-form-item label="审批意见">
           <el-input v-model="approveForm.comment" type="textarea" :rows="3" placeholder="请输入审批意见" />
@@ -65,6 +73,8 @@ const query = reactive({ keyword: '' })
 const approveVisible = ref(false)
 const approveForm = reactive({ taskId: 0, approved: true, comment: '' })
 const submitting = ref(false)
+const instanceFields = ref([])
+const instanceFormData = ref({})
 
 async function load() {
   loading.value = true
@@ -80,10 +90,26 @@ function resetQuery() {
   load()
 }
 
-function openApprove(row, approved) {
+function parseFields(str) {
+  if (!str) return []
+  try { return JSON.parse(str) } catch { return [] }
+}
+
+function parseFormData(str) {
+  if (!str) return {}
+  try { return typeof str === 'string' ? JSON.parse(str) : str } catch { return {} }
+}
+
+function formatValue(v) { return (v == null || v === '') ? '-' : v }
+
+async function openApprove(row, approved) {
   approveForm.taskId = row.id
   approveForm.approved = approved
   approveForm.comment = ''
+  // 加载流程实例，展示申请表单
+  const inst = await api.flowInstance(row.flowInstanceId)
+  instanceFormData.value = parseFormData(inst.formData)
+  instanceFields.value = parseFields(inst.flowDesign?.formFields)
   approveVisible.value = true
 }
 
