@@ -80,6 +80,9 @@ namespace QuanliERP.Api.Controllers
         {
             var o = await _db.PurchaseOrders.Include(x => x.Items).FirstOrDefaultAsync(x => x.Id == id);
             if (o == null) return NotFound();
+            if (o.Status == "已到货" || o.Status == "完成")
+                return BadRequest(new { message = "已到货的订单不允许修改" });
+
             o.SupplierId = input.SupplierId;
             o.OrderDate = input.OrderDate;
             o.ExpectDate = input.ExpectDate;
@@ -87,9 +90,16 @@ namespace QuanliERP.Api.Controllers
             foreach (var old in o.Items.ToList())
             {
                 var match = input.Items.FirstOrDefault(x => x.Id == old.Id);
-                if (match == null) _db.PurchaseOrderItems.Remove(old);
+                if (match == null)
+                {
+                    if (old.ReceivedQty > 0)
+                        return BadRequest(new { message = "已到货的明细不允许删除" });
+                    _db.PurchaseOrderItems.Remove(old);
+                }
                 else
                 {
+                    if (match.Qty < old.ReceivedQty)
+                        return BadRequest(new { message = $"材料已到货 {old.ReceivedQty}，数量不能小于已到货数量" });
                     old.MaterialId = match.MaterialId;
                     old.Qty = match.Qty;
                     old.Price = match.Price;
@@ -123,6 +133,8 @@ namespace QuanliERP.Api.Controllers
             if (o == null) return NotFound();
             if (o.Status == "已到货" || o.Status == "完成")
                 return BadRequest(new { message = "已到货的订单不允许删除" });
+            if (o.Items.Any(i => i.ReceivedQty > 0))
+                return BadRequest(new { message = "订单已有到货记录，请先删除到货单再删除订单" });
             _db.PurchaseOrderItems.RemoveRange(o.Items);
             _db.PurchaseOrders.Remove(o);
             await _db.SaveChangesAsync();
@@ -192,12 +204,23 @@ namespace QuanliERP.Api.Controllers
             if (string.IsNullOrEmpty(receipt.ReceiptNo))
                 receipt.ReceiptNo = "SH" + DateTime.Now.ToString("yyyyMMddHHmmss");
 
+            // 校验关联采购订单状态：草稿/取消/已到货/完成 不允许到货
+            var po = await _db.PurchaseOrders.Include(x => x.Items)
+                .FirstOrDefaultAsync(x => receipt.PurchaseOrderId != null && x.Id == receipt.PurchaseOrderId);
+            if (po != null)
+            {
+                if (po.Status == "草稿")
+                    return BadRequest(new { message = "采购订单为草稿状态，请先下单后再到货" });
+                if (po.Status == "取消")
+                    return BadRequest(new { message = "采购订单已取消，不允许到货" });
+                if (po.Status == "已到货" || po.Status == "完成")
+                    return BadRequest(new { message = "采购订单已到货/完成，不允许重复到货" });
+            }
+
             _db.PurchaseReceipts.Add(receipt);
             await _db.SaveChangesAsync();
 
             // 更新采购订单已收数量与状态，增加材料库存
-            var po = await _db.PurchaseOrders.Include(x => x.Items)
-                .FirstOrDefaultAsync(x => receipt.PurchaseOrderId != null && x.Id == receipt.PurchaseOrderId);
             if (po != null)
             {
                 foreach (var ri in receipt.Items)
@@ -269,6 +292,12 @@ namespace QuanliERP.Api.Controllers
                         Remark = "删除到货单回滚"
                     });
                 }
+            }
+            // 按剩余已收数量重算采购订单状态
+            if (po != null)
+            {
+                if (po.Items.All(i => i.ReceivedQty <= 0)) po.Status = "已下单";
+                else po.Status = "部分到货";
             }
             _db.PurchaseReceiptItems.RemoveRange(r.Items);
             _db.PurchaseReceipts.Remove(r);

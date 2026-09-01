@@ -99,10 +99,14 @@ namespace QuanliERP.Api.Controllers
                 var match = input.Items.FirstOrDefault(x => x.Id == old.Id);
                 if (match == null)
                 {
+                    if (old.DeliveredQty > 0)
+                        return BadRequest(new { message = "已发货的明细不允许删除" });
                     _db.SalesOrderItems.Remove(old);
                 }
                 else
                 {
+                    if (match.Qty < old.DeliveredQty)
+                        return BadRequest(new { message = $"产品已发货 {old.DeliveredQty}，数量不能小于已发数量" });
                     old.ProductId = match.ProductId;
                     old.Qty = match.Qty;
                     old.Price = match.Price;
@@ -136,6 +140,8 @@ namespace QuanliERP.Api.Controllers
             if (o == null) return NotFound();
             if (o.Status == "完成" || o.Status == "已发货")
                 return BadRequest(new { message = "已完成的订单不允许删除" });
+            if (o.Items.Any(i => i.DeliveredQty > 0))
+                return BadRequest(new { message = "订单已有发货记录，请先删除发货单再删除订单" });
             _db.SalesOrderItems.RemoveRange(o.Items);
             _db.SalesOrders.Remove(o);
             await _db.SaveChangesAsync();
@@ -204,37 +210,68 @@ namespace QuanliERP.Api.Controllers
             if (string.IsNullOrEmpty(delivery.DeliveryNo))
                 delivery.DeliveryNo = "DH" + DateTime.Now.ToString("yyyyMMddHHmmss");
 
+            // 校验关联销售订单状态：草稿/取消不允许发货
+            var so = await _db.SalesOrders.Include(x => x.Items).FirstOrDefaultAsync(x => x.Id == delivery.SalesOrderId);
+            if (so == null)
+                return BadRequest(new { message = "关联销售订单不存在" });
+            if (so.Status == "草稿")
+                return BadRequest(new { message = "订单为草稿状态，请先确认订单后再发货" });
+            if (so.Status == "取消")
+                return BadRequest(new { message = "订单已取消，不允许发货" });
+            if (so.Status == "已发货" || so.Status == "完成")
+                return BadRequest(new { message = "订单已发货/完成，不允许重复发货" });
+
+            // 先校验全部明细库存是否充足（避免部分写入）
+            var invCache = new Dictionary<(int, int), Inventory>();
+            foreach (var di in delivery.Items)
+            {
+                var soi = so.Items.FirstOrDefault(i => i.ProductId == di.ProductId);
+                if (soi == null)
+                    return BadRequest(new { message = $"产品[{di.Product?.Name}]不在订单明细中，无法发货" });
+                if (di.Qty > soi.Qty - soi.DeliveredQty)
+                    return BadRequest(new { message = $"产品[{di.Product?.Name}]发货数量超过订单未发数量" });
+
+                var inv = await _db.Inventories.FirstOrDefaultAsync(x =>
+                    x.ItemType == "产品" && x.ItemId == di.ProductId && x.WarehouseId == delivery.WarehouseId);
+                if (inv == null)
+                {
+                    inv = new Inventory
+                    {
+                        WarehouseId = delivery.WarehouseId, ItemType = "产品", ItemId = di.ProductId,
+                        Code = di.Product?.Code ?? "", Name = di.Product?.Name ?? "",
+                        Specification = di.Product?.Specification ?? "",
+                        Unit = di.Product?.Unit ?? "", Qty = 0, SafeStock = 0, UpdatedAt = DateTime.Now
+                    };
+                    _db.Inventories.Add(inv);
+                }
+                if (inv.Qty < di.Qty)
+                    return BadRequest(new { message = $"产品[{di.Product?.Name}]库存不足，当前库存 {inv.Qty}" });
+                invCache[(di.ProductId, delivery.WarehouseId)] = inv;
+            }
+
+            // 校验通过后才落库
             _db.Deliveries.Add(delivery);
             await _db.SaveChangesAsync();
 
             // 更新订单已发数量与状态，扣减成品库存
-            var so = await _db.SalesOrders.Include(x => x.Items).FirstOrDefaultAsync(x => x.Id == delivery.SalesOrderId);
-            if (so != null)
+            foreach (var di in delivery.Items)
             {
-                foreach (var di in delivery.Items)
+                var soi = so.Items.FirstOrDefault(i => i.ProductId == di.ProductId);
+                if (soi != null) soi.DeliveredQty += di.Qty;
+                var inv = invCache[(di.ProductId, delivery.WarehouseId)];
+                inv.Qty -= di.Qty;
+                inv.UpdatedAt = DateTime.Now;
+                _db.InventoryLedgers.Add(new InventoryLedger
                 {
-                    var soi = so.Items.FirstOrDefault(i => i.ProductId == di.ProductId);
-                    if (soi != null) soi.DeliveredQty += di.Qty;
-                    var inv = await _db.Inventories.FirstOrDefaultAsync(x =>
-                        x.ItemType == "产品" && x.ItemId == di.ProductId && x.WarehouseId == delivery.WarehouseId);
-                    if (inv != null)
-                    {
-                        if (inv.Qty < di.Qty) return BadRequest(new { message = $"产品[{di.Product?.Name}]库存不足，当前库存 {inv.Qty}" });
-                        inv.Qty -= di.Qty;
-                        inv.UpdatedAt = DateTime.Now;
-                        _db.InventoryLedgers.Add(new InventoryLedger
-                        {
-                            WarehouseId = delivery.WarehouseId, ItemType = "产品", ItemId = di.ProductId,
-                            ItemName = di.Product?.Name ?? "", Specification = di.Product?.Specification ?? "",
-                            BillType = "销售出库", BillNo = delivery.DeliveryNo, InQty = 0, OutQty = di.Qty,
-                            BalanceQty = inv.Qty, Operator = User.Identity?.Name ?? "", OperationTime = DateTime.Now,
-                            Remark = "销售发货"
-                        });
-                    }
-                }
-                if (so.Items.All(i => i.DeliveredQty >= i.Qty)) so.Status = "已发货";
-                else so.Status = "部分发货";
+                    WarehouseId = delivery.WarehouseId, ItemType = "产品", ItemId = di.ProductId,
+                    ItemName = di.Product?.Name ?? "", Specification = di.Product?.Specification ?? "",
+                    BillType = "销售出库", BillNo = delivery.DeliveryNo, InQty = 0, OutQty = di.Qty,
+                    BalanceQty = inv.Qty, Operator = User.Identity?.Name ?? "", OperationTime = DateTime.Now,
+                    Remark = "销售发货"
+                });
             }
+            if (so.Items.All(i => i.DeliveredQty >= i.Qty)) so.Status = "已发货";
+            else so.Status = "部分发货";
             await _db.SaveChangesAsync();
             return Ok(delivery);
         }
@@ -270,7 +307,16 @@ namespace QuanliERP.Api.Controllers
                         });
                     }
                 }
-                so.Status = "确认";
+                // 按剩余已发数量重算订单状态（保持原已确认/已排产状态）
+                if (so.Items.All(i => i.DeliveredQty <= 0))
+                {
+                    if (so.Status == "已发货" || so.Status == "部分发货")
+                        so.Status = "确认";
+                }
+                else
+                {
+                    so.Status = "部分发货";
+                }
             }
             _db.DeliveryItems.RemoveRange(d.Items);
             _db.Deliveries.Remove(d);

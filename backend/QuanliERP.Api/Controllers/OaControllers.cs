@@ -46,13 +46,16 @@ namespace QuanliERP.Api.Controllers
         private readonly AppDbContext _db;
         public MessagesController(AppDbContext db) { _db = db; }
 
+        // 当前登录用户的姓名（消息按 displayName 归属）
+        private string CurrentName => User.FindFirst("DisplayName")?.Value ?? User.Identity?.Name ?? "";
+
         // 收件箱：当前用户的全部消息（按置顶/时间排序）
         [HttpGet]
         [RequirePermission("oa:message")]
-        public async Task<IActionResult> GetAll([FromQuery] string? recipient, [FromQuery] string? keyword, [FromQuery] string? filter)
+        public async Task<IActionResult> GetAll([FromQuery] string? keyword, [FromQuery] string? filter)
         {
-            var q = _db.Messages.AsQueryable();
-            if (!string.IsNullOrWhiteSpace(recipient)) q = q.Where(m => m.Recipient == recipient);
+            var curName = CurrentName;
+            var q = _db.Messages.Where(m => m.Recipient == curName);
             if (!string.IsNullOrWhiteSpace(keyword))
                 q = q.Where(m => m.Content.Contains(keyword) || m.MsgType.Contains(keyword));
             if (filter == "starred") q = q.Where(m => m.IsStarred);
@@ -66,27 +69,37 @@ namespace QuanliERP.Api.Controllers
 
         // 未读消息数
         [HttpGet("unread-count")]
-        public async Task<IActionResult> GetUnreadCount([FromQuery] string recipient)
+        public async Task<IActionResult> GetUnreadCount()
         {
-            var count = await _db.Messages.CountAsync(m => m.Recipient == recipient && !m.IsRead);
+            var curName = CurrentName;
+            var count = await _db.Messages.CountAsync(m => m.Recipient == curName && !m.IsRead);
             return Ok(new { count });
         }
 
         // 未读消息列表（顶部气泡下拉用）
         [HttpGet("unread")]
-        public async Task<IActionResult> GetUnread([FromQuery] string recipient, [FromQuery] int limit = 10)
+        public async Task<IActionResult> GetUnread([FromQuery] int limit = 10)
         {
-            var list = await _db.Messages.Where(m => m.Recipient == recipient && !m.IsRead)
+            var curName = CurrentName;
+            var list = await _db.Messages.Where(m => m.Recipient == curName && !m.IsRead)
                 .OrderByDescending(m => m.CreatedAt).Take(limit)
                 .Select(m => new { m.Id, m.MsgType, m.Content, m.Creator, m.CreatedAt })
                 .ToListAsync();
             return Ok(list);
         }
 
+        // 校验消息归属当前用户
+        private async Task<Message?> OwnedMessage(int id)
+        {
+            var curName = CurrentName;
+            var item = await _db.Messages.FirstOrDefaultAsync(m => m.Id == id && m.Recipient == curName);
+            return item;
+        }
+
         [HttpPut("{id}/read")]
         public async Task<IActionResult> MarkRead(int id)
         {
-            var item = await _db.Messages.FindAsync(id);
+            var item = await OwnedMessage(id);
             if (item == null) return NotFound();
             item.IsRead = true;
             await _db.SaveChangesAsync();
@@ -97,7 +110,7 @@ namespace QuanliERP.Api.Controllers
         [RequirePermission("oa:message")]
         public async Task<IActionResult> ToggleStar(int id)
         {
-            var item = await _db.Messages.FindAsync(id);
+            var item = await OwnedMessage(id);
             if (item == null) return NotFound();
             item.IsStarred = !item.IsStarred;
             await _db.SaveChangesAsync();
@@ -108,7 +121,7 @@ namespace QuanliERP.Api.Controllers
         [RequirePermission("oa:message")]
         public async Task<IActionResult> TogglePin(int id)
         {
-            var item = await _db.Messages.FindAsync(id);
+            var item = await OwnedMessage(id);
             if (item == null) return NotFound();
             item.IsPinned = !item.IsPinned;
             await _db.SaveChangesAsync();
@@ -119,7 +132,7 @@ namespace QuanliERP.Api.Controllers
         [RequirePermission("oa:message")]
         public async Task<IActionResult> Delete(int id)
         {
-            var item = await _db.Messages.FindAsync(id);
+            var item = await OwnedMessage(id);
             if (item == null) return NotFound();
             _db.Messages.Remove(item);
             await _db.SaveChangesAsync();
@@ -345,12 +358,12 @@ namespace QuanliERP.Api.Controllers
         private readonly AppDbContext _db;
         public FlowInstancesController(AppDbContext db) { _db = db; }
 
-        // 我的流程：我发起的
+        // 我的流程：我发起的（强制按当前登录用户过滤）
         [HttpGet("my")]
-        public async Task<IActionResult> GetMy([FromQuery] string? creator, [FromQuery] string? keyword)
+        public async Task<IActionResult> GetMy([FromQuery] string? keyword)
         {
-            var q = _db.FlowInstances.AsQueryable();
-            if (!string.IsNullOrWhiteSpace(creator)) q = q.Where(f => f.Creator == creator);
+            var curName = User.FindFirst("DisplayName")?.Value ?? User.Identity?.Name ?? "";
+            var q = _db.FlowInstances.Where(f => f.Creator == curName);
             if (!string.IsNullOrWhiteSpace(keyword))
                 q = q.Where(f => f.InstanceName.Contains(keyword) || f.InstanceNo.Contains(keyword));
             var list = await q.OrderByDescending(f => f.CreatedAt).Select(f => new
@@ -361,12 +374,12 @@ namespace QuanliERP.Api.Controllers
             return Ok(list);
         }
 
-        // 待办事项：分配给我的待处理任务
+        // 待办事项：分配给我的待处理任务（强制按当前登录用户过滤）
         [HttpGet("todo")]
-        public async Task<IActionResult> GetTodo([FromQuery] string? approver, [FromQuery] string? keyword)
+        public async Task<IActionResult> GetTodo([FromQuery] string? keyword)
         {
-            var q = _db.FlowTasks.Where(t => t.Status == "待处理");
-            if (!string.IsNullOrWhiteSpace(approver)) q = q.Where(t => t.Approver == approver);
+            var curName = User.FindFirst("DisplayName")?.Value ?? User.Identity?.Name ?? "";
+            var q = _db.FlowTasks.Where(t => t.Status == "待处理" && t.Approver == curName);
             if (!string.IsNullOrWhiteSpace(keyword))
                 q = q.Where(t => t.FlowInstance!.InstanceName.Contains(keyword) || t.FlowInstance.InstanceNo.Contains(keyword));
             var list = await q.OrderByDescending(t => t.CreatedAt).Select(t => new
@@ -378,12 +391,12 @@ namespace QuanliERP.Api.Controllers
             return Ok(list);
         }
 
-        // 已办事项：我已处理的任务
+        // 已办事项：我已处理的任务（强制按当前登录用户过滤）
         [HttpGet("done")]
-        public async Task<IActionResult> GetDone([FromQuery] string? approver, [FromQuery] string? keyword)
+        public async Task<IActionResult> GetDone([FromQuery] string? keyword)
         {
-            var q = _db.FlowTasks.Where(t => t.Status != "待处理");
-            if (!string.IsNullOrWhiteSpace(approver)) q = q.Where(t => t.Approver == approver);
+            var curName = User.FindFirst("DisplayName")?.Value ?? User.Identity?.Name ?? "";
+            var q = _db.FlowTasks.Where(t => t.Status != "待处理" && t.Approver == curName);
             if (!string.IsNullOrWhiteSpace(keyword))
                 q = q.Where(t => t.FlowInstance!.InstanceName.Contains(keyword) || t.FlowInstance.InstanceNo.Contains(keyword));
             var list = await q.OrderByDescending(t => t.HandledAt).Select(t => new
@@ -464,6 +477,12 @@ namespace QuanliERP.Api.Controllers
             if (task == null) return NotFound();
             if (task.Status != "待处理") return BadRequest(new { message = "该任务已处理" });
 
+            // 越权校验：仅任务的审批人（或管理员）可审批
+            var curName = User.FindFirst("DisplayName")?.Value ?? User.Identity?.Name ?? "";
+            var curRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
+            if (curRole != "admin" && !string.Equals(task.Approver, curName, StringComparison.OrdinalIgnoreCase))
+                return BadRequest(new { message = "该任务不属于当前用户，无权审批" });
+
             var instance = task.FlowInstance!;
             var design = instance.FlowDesign!;
             var nodes = design.Nodes.OrderBy(n => n.Sort).ToList();
@@ -531,6 +550,11 @@ namespace QuanliERP.Api.Controllers
         {
             var x = await _db.FlowInstances.FindAsync(id);
             if (x == null) return NotFound();
+            // 越权校验：仅创建者或管理员可删除
+            var curName = User.FindFirst("DisplayName")?.Value ?? User.Identity?.Name ?? "";
+            var curRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
+            if (curRole != "admin" && !string.Equals(x.Creator, curName, StringComparison.OrdinalIgnoreCase))
+                return BadRequest(new { message = "只能删除自己发起的流程" });
             _db.FlowInstances.Remove(x);
             await _db.SaveChangesAsync();
             return Ok(new { message = "删除成功" });

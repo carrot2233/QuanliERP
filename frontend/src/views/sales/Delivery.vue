@@ -52,7 +52,7 @@
           <el-col :span="12">
             <el-form-item label="关联订单" required>
               <el-select v-model="form.salesOrderId" filterable style="width:100%" @change="onOrderChange">
-                <el-option v-for="o in orders" :key="o.id" :label="o.orderNo + ' (' + o.customerName + ')'" :value="o.id" />
+                <el-option v-for="o in deliverableOrders" :key="o.id" :label="o.orderNo + ' (' + o.customerName + ')'" :value="o.id" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -132,7 +132,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '../../api/modules'
 
@@ -148,6 +148,10 @@ const query = reactive({ keyword: '' })
 const _initQuery = { ...query }
 const form = reactive({})
 const detail = ref({})
+
+// 可发货订单状态（草稿/取消/已发货/完成 不可发货）
+const deliverableStatuses = ['确认', '已排产', '部分发货']
+const deliverableOrders = computed(() => orders.value.filter(o => deliverableStatuses.includes(o.status)))
 
 async function load() {
   loading.value = true
